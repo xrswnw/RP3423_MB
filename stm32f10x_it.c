@@ -209,31 +209,29 @@ void CAN_IRQHandler(void)
 	// 没有接收到数据,直接退出 
 	if(CAN_MessagePending(CAN_HARDPORT, CAN_FIFO0))
 	{
-        CanRxMsg *pCanRcvInfo = NULL;
+        CanRxMsg canRxFrame = {0};
+        CAN_FRAME canTxFrame = {0};
         
-        pCanRcvInfo = &g_sCanRcvInfo;
-		CAN_Receive(CAN_HARDPORT, CAN_FIFO0, pCanRcvInfo);   // 读取数据	
-        if(pCanRcvInfo->IDE == CAN_ID_STD && pCanRcvInfo->DLC)
+		CAN_Receive(CAN_HARDPORT, CAN_FIFO0, &canRxFrame);   // 读取数据	
+        if(canRxFrame.IDE == CAN_ID_STD && canRxFrame.DLC)
         {
-            g_sTempCanFrame.coBid = pCanRcvInfo->StdId;
-            g_sTempCanFrame.staus = CAN_FRAME_STATUS_STD;
-            g_sTempCanFrame.len = pCanRcvInfo->DLC;
-            memcpy(g_sTempCanFrame.buffer, pCanRcvInfo->Data, pCanRcvInfo->DLC);
+            canTxFrame.coBid = canRxFrame.StdId;
+            canTxFrame.len = canRxFrame.DLC;
+            memcpy(canTxFrame.buffer, canRxFrame.Data, canRxFrame.DLC);
           
-            if(xQueueSendFromISR(g_hCanRxQueue, &g_sTempCanFrame, 0) == pdPASS)
+            if(xQueueSendFromISR(g_hCanRxQueue, &canTxFrame, 0) == pdPASS)
             {
-                pCanRcvInfo->DLC = 0;
+                canRxFrame.DLC = 0;
             }
             else
             {
                 //队列已满,数据溢出？硬件问题？考虑清除队列缓冲区
-                pCanRcvInfo->DLC = 0;
+                canRxFrame.DLC = 0;
             }
         }
 	}
 }
-//
-
+//232
 void Uart_RxDMAIRQHandler(void)
 {
     Uart_DisableRxDma(); //接收缓冲区满，一般不会出现这样的情况，如果有，就可能系统有故障
@@ -256,12 +254,11 @@ void Uart_IRQHandler(void)
         u8 byte =Uart_ReadByte();
         g_sUartRxFrame.length = Uart_GetRxLen();
         g_sUartRxFrame.com = UART_COM_232;
-        if(g_sUartRxFrame.length)
+        if(g_sUartRxFrame.length && (g_sUartRxFrame.length <= UART_BUFFER_MAX_LEN))
         {
             if(xQueueSendFromISR(g_hUartRxQueue, &g_sUartRxFrame, 0) == pdPASS)
             {
                 g_sUartRxFrame.length = 0;
-                Uart_EnableRxDma();
             }
             else
             {
@@ -269,8 +266,103 @@ void Uart_IRQHandler(void)
                 g_sUartRxFrame.length = 0;
             }
         }
+        Uart_EnableRxDma();
     }
 
     g_nUartSr = UART_PORT->SR;                                       //通过读取SR和DR清空中断标志
     g_nUartSr = UART_PORT->DR;    
+}
+//LAN
+void Lan_RxDMAIRQHandler(void)
+{
+    Lan_DisableRxDma(); //接收缓冲区满，一般不会出现这样的情况，如果有，就可能系统有故障
+    g_sLanRxFrame.length = 0;
+}
+
+void Lan_TxDMAIRQHandler(void)
+{
+    Lan_DisableTxDma();                                             //DMA完成后，最后一个字节可能没有发送出去，需要在主循环中做判断处理
+    Lan_EnableRxDma();                                              //使能接收
+}
+
+u16 g_nLanSr = 0;
+u16 g_nLanDr = 0;
+void Lan_IRQHandler(void)
+{
+    if(LAN_PORT->SR & LAN_SR_IDLE)
+    {    
+        Lan_DisableRxDma();
+        g_sLanRxFrame.length = Lan_GetRxLen();
+        g_sLanRxFrame.com = UART_COM_LAN;
+        if(g_sLanRxFrame.length && (g_sLanRxFrame.length <= UART_BUFFER_MAX_LEN))
+        {
+            if(xQueueSendFromISR(g_hUartRxQueue, &g_sLanRxFrame, 0) == pdPASS)
+            {
+                g_sLanRxFrame.length = 0;
+            }
+            else
+            {
+                //队列已满,数据溢出？硬件问题？考虑清除队列缓冲区
+                g_sLanRxFrame.length = 0;
+            }
+        }
+        Lan_EnableRxDma();
+    }
+
+    g_nLanSr = LAN_PORT->SR;                                       //通过读取SR和DR清空中断标志
+    g_nLanDr = LAN_PORT->DR;    
+}
+//WIFI
+
+/*
+void Wifi_IRQHandler(void)
+{
+    if(WIFI_PORT->SR & LAN_SR_IDLE)
+    {    
+        Wifi_DisableRxDma();
+        g_sWifiRxFrame.length = Wifi_GetRxLen();
+        g_sWifiRxFrame.com = UART_COM_LAN;
+        
+        Wifi_EnableRxDma();
+    }
+
+    g_nWifiSr = WIFI_PORT->SR;                                       //通过读取SR和DR清空中断标志
+    g_nWifiDr = WIFI_PORT->DR;    
+}*/
+
+
+void Wifi_IRQHandler(void)
+{
+    if(USART_GetITStatus(WIFI_PORT, USART_IT_RXNE) != RESET)
+    {
+        u8 byte = 0;
+        USART_ClearITPendingBit(WIFI_PORT, USART_IT_RXNE);
+        byte = Wifi_ReadByte();
+
+        Uart_ReceiveFrame(byte, g_sWifiRxFrame);
+        if(g_sWifiRxFrame.length == 1)
+        {
+            Wifi_StartRcvTim();
+        }
+        else
+        {
+            Wifi_ResetTimCnt();
+        }
+    }
+    else if(USART_GetITStatus(WIFI_PORT, USART_IT_ORE) != RESET)
+    {
+        Wifi_ReadByte();
+    }
+    WIFI_PORT->SR &= (~0x3FF);
+}
+
+void TIM4_IRQHandler(void)
+{
+    if(WIFI_RCV_TIMER->SR & TIM_IT_Update)
+    {
+        WIFI_RCV_TIMER->SR = ~TIM_IT_Update;
+
+        Wifi_StopRcvTim();
+        g_sWifiRxFrame.state = UART_STAT_TO;
+    }
 }

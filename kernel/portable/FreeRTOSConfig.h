@@ -83,7 +83,7 @@
 #define configUSE_QUEUE_SETS                    1								//使用队列集
 
 #define configGENERATE_RUN_TIME_STATS                   1                               //定时器任务
-#define configUSE_STATS_FORMATTING_FUNCTIONS            0                              //统计任务运行时间  vTaskList()
+#define configUSE_STATS_FORMATTING_FUNCTIONS            1                              //统计任务运行时间  vTaskList()
 
 #if configGENERATE_RUN_TIME_STATS
     //extern uint32_t FreeRTOSRunTimeTicks;

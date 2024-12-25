@@ -3,6 +3,7 @@
 UART_RCVFRAME g_sUartRxFrame = {0};
 UART_TXFRAME g_sUartTxFrame = {0};
 
+/*
 void Uart_ReceiveFrame(u8 byte, UART_RCVFRAME *pRcvFrame)
 {
     switch(pRcvFrame->state)
@@ -78,7 +79,7 @@ void Uart_ReceiveFrame(u8 byte, UART_RCVFRAME *pRcvFrame)
 
     pRcvFrame->idleTime = 0;
 }
-
+*/
 u16 Uart_UsrCheckFrame(u8 *pBuffer, u16 len, u16 *pStartPos)
 {
     u16 pos = 0;

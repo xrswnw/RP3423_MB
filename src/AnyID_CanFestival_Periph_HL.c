@@ -14,7 +14,7 @@ u8 g_nPeriphLedStatus = 0;
 
 void Periph_Delayms(u32 n)
 {
-    n *= 0x3800;
+    n *= 0x6000;
     n++;
     while(n--);
 }

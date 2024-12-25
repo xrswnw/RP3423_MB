@@ -72,4 +72,7 @@ AnyID_CanFestival_Device.pbi: \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\inc/AnyID_CanFestival_Wifi.h \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\inc/AnyID_CanFestival_Wifi_HL.h \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\inc/AnyID_CanFestival_Uart.h \
-  E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\inc/AnyID_CanFestival_Uart_HL.h
+  E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\inc/AnyID_CanFestival_Uart_HL.h \
+  E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\inc/AnyID_CanFestival_Flash.h \
+  E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\inc/AnyID_CanFestival_FlashM25.h \
+  E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\inc/AnyID_CanFestival_FLASH_HL.h

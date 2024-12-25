@@ -1,6 +1,6 @@
 #include "AnyID_CanFestival_Device.h"
 
-const u8 DEVICE_VERSION[DEVICE_VERSION_SIZE]@0x08005000 = "RP3423_MB 24081302 G231200";
+const u8 DEVICE_VERSION[DEVICE_VERSION_SIZE]@0x08005000 = "RP3423_MB 24122500 G231200";
 
 #define MASTER                  1
 
@@ -10,27 +10,9 @@ const u8 DEVICE_VERSION[DEVICE_VERSION_SIZE]@0x08005000 = "RP3423_MB 24081302 G2
     #define I_AM_MASTER         0
 #endif
 
-
-u32 g_nDeviceStatus = 0;
 DEVICE_PARAMS g_sDeviceParams = {0};
-
-READER_RSPFRAME g_sReaderRspFrame = {0};
 DEVICE_SUBINFO g_sDeviceSubInfo = {0};
 DEVICE_OP g_sDeviceOp = {0};
-
-void Device_Delayms(u32 t)
-{
-    t *= 0x5400;
-    t++;
-    while(t--);
-}
-
-void Device_Delay100us(u32 t)
-{
-    t *= 0x600; 
-    t++;
-    while(t--);
-}
 
 void Device_Init()
 {
@@ -48,6 +30,38 @@ void Device_ResetDeviceParamenter()
 		
 	//系统参数
 	g_sDeviceParams.addr = 0x01;
+    //--------------------------------
+    g_sDeviceParams.rfParams.pemace.power = RF_PARAMS_PEMACE_POWER_5W;
+    g_sDeviceParams.rfParams.pemace.immunity = RF_PARAMS_PEMACE_IMMUNITY_HIGH;              
+    g_sDeviceParams.rfParams.pemace.sensitivity = RF_PARAMS_PEMACE_SENSITIVITY_HIGH;             
+    g_sDeviceParams.rfParams.pemace.depth = RF_PARAMS_PEMACE_DEPTH_ASK100;                 
+    g_sDeviceParams.rfParams.pemace.slot = RF_PARAMS_PEMACE_SLOT_16;       
+    
+    g_sDeviceParams.rfParams.amar.amarMode = RF_PARAMS_AMAR_MODE_AFI;
+    g_sDeviceParams.rfParams.amar.op = RF_PARAMS_AMAR_OP_READ_UID;
+    g_sDeviceParams.rfParams.amar.opAddr = RF_PARAMS_AMAR_OP_ADDR_DEFULAT;
+    g_sDeviceParams.rfParams.amar.opLenth = RF_PARAMS_AMAR_OP_LENTH_DEFULAT;
+    
+    g_sDeviceParams.rfParams.afi.enable = RF_PARAMS_AFI_ENABLE_AFI0;
+    g_sDeviceParams.rfParams.afi.afi0 = RF_PARAMS_AFI_VALUE_DEFULAT;
+    g_sDeviceParams.rfParams.afi.afi1 = RF_PARAMS_AFI_VALUE_DEFULAT;
+    g_sDeviceParams.rfParams.afi.afi2 = RF_PARAMS_AFI_VALUE_DEFULAT;
+    g_sDeviceParams.rfParams.afi.afi3 = RF_PARAMS_AFI_VALUE_DEFULAT;
+    
+    g_sDeviceParams.rfParams.eas.enable = RF_PARAMS_EAS_ENABLE_EAS0;
+    g_sDeviceParams.rfParams.eas.eas0 = RF_PARAMS_EAS_VALUE_DEFULAT;
+    g_sDeviceParams.rfParams.eas.eas1 = RF_PARAMS_EAS_VALUE_DEFULAT;
+    g_sDeviceParams.rfParams.eas.eas2 = RF_PARAMS_EAS_VALUE_DEFULAT;
+    
+    g_sDeviceParams.rfParams.infraed.enable = RF_PARAMS_INFRARED_ENABLE_MODE0;
+    
+    //--------------------------
+    g_sDeviceParams.wokeParams.type = DEVICE_SUBDEVICE_TYPE_MB;
+    g_sDeviceParams.wokeParams.tigger = DEVICE_WOKE_PARAMS_TIGGER_CYCLE;
+    g_sDeviceParams.wokeParams.cycleTime = DEVICE_WOKE_PARAMS_CYCLETIME_500MS;
+    g_sDeviceParams.wokeParams.flag = DEVICE_WOKE_PARAMS_FLAG_NULL;
+    g_sDeviceParams.wokeParams.netDissTime = DEVICE_WOKE_PARAMS_NETDISSTIME_100S;
+    g_sDeviceParams.wokeParams.linitTime = DEVICE_WOKE_PARAMS_LINITTIME_DEFAULT;
 }
 
 void Device_ReadDeviceParamenter(void)
@@ -171,8 +185,6 @@ u16 Device_ResponseFrame(u8 *pParam, u16 len, UART_TXFRAME *pRspFrame)
     return pos;
 }
 
-
-
 u16 Reader_ProcessUartFrame(u8 *pFrame, UART_TXFRAME *txFrame)
 {
     u8 cmd = 0;
@@ -214,6 +226,38 @@ u16 Reader_ProcessUartFrame(u8 *pFrame, UART_TXFRAME *txFrame)
                 txFrame->len = Device_ResponseFrame((u8 *)&DEVICE_VERSION, DEVICE_VERSION_SIZE, txFrame);
           }
         break;
+    case UART_COM_CMD_SUBDEVICE_DTU:
+         if((paramsLen <= (CAN_FRAME_MAX_LENTH + 1)) && (paramsLen >= (3)))
+          {
+                CAN_FRAME canTxFrame = {0};
+
+                if(*(pParams) == 0xFF)
+                {
+                    canTxFrame.coBid = DEVICE_COM_BASE_BOAD_COBID;
+                    canTxFrame.flag = CAN_FRAME_FLAG_NO_RSP;
+                    
+                    txFrame->result = UART_COM_RESULT_NEED_RSP;
+                    txFrame->len = Device_ResponseFrame(NULL, 0, txFrame);
+                }
+                else
+                {
+                    canTxFrame.coBid = DEVICE_COB_ID_MT_SDO + *(pParams);
+                    canTxFrame.flag = CAN_FRAME_FLAG_NEED_RSP;
+                    
+                    txFrame->len = 1;
+                    txFrame->result = UART_COM_RESULT_NO_RSP;
+                }
+                
+                canTxFrame.len = paramsLen - 1;
+                memcpy(&canTxFrame.buffer, pParams + 1, canTxFrame.len);
+                canTxFrame.staus = CAN_FRAME_STATUS_REPORT;
+                if(xQueueSend(g_hCanTxQueue, &canTxFrame, portMAX_DELAY))
+                {
+                    g_sUartTxFrame.cmd = UART_COM_CMD_SUBDEVICE_DTU;
+                    g_sUartTxFrame.destAddr = txFrame->destAddr;
+                }
+          }
+      break;
         default:
             break;
     }
@@ -311,6 +355,12 @@ u8 Device_ProcessCobMRSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams, CAN_FRAME
             }
         }
         break;
+        case DEVICE_COM_CMD_RESET:
+        if(paramsLen == DEVICE_CAN_FRAME_NOPARAMS_LEN)
+        {   
+             result = DEVICE_CAN_FRAME_RESULT_CHKOK;
+        }
+        break;
         case DEVICE_COM_CMD_GET_VERSION:
         if(paramsLen == DEVICE_CAN_FRAME_LIMITDATA_LEN)
         {
@@ -374,6 +424,7 @@ u8 Device_ProcessCobSTSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams)
                 {
                     pSubInfo->addr = addr;
                     pSubInfo->heartTime = g_nSysTick;
+                    pSubInfo->err = *(pParams + DEVICE_CAN_RSP_POS_PARAMS);
                 }
                 
                 Device_RspFormatCanFrame(DEVICE_COB_ID_SR_SDO + addr, cmd, DEVICE_CAN_FRAME_RSP_OK, NULL, NULL);
@@ -390,7 +441,7 @@ u8 Device_ProcessCobSTSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams)
                 {
                     pSubInfo->addr = addr;
                     pSubInfo->type = *(pParams + DEVICE_CAN_RSP_POS_PARAMS);
-                    pSubInfo->status = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + 1);
+                    pSubInfo->err = pSubInfo->status = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + 1);
                 }
                 else 
                 {
@@ -400,7 +451,7 @@ u8 Device_ProcessCobSTSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams)
                         
                         pSubInfo->addr = addr;
                         pSubInfo->type = *(pParams + DEVICE_CAN_RSP_POS_PARAMS);
-                        pSubInfo->status = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + 1);
+                        pSubInfo->err = pSubInfo->status = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + 1);
                         g_sDeviceSubInfo.num++;
                     }
                 }
@@ -463,10 +514,6 @@ u8 Device_ProcessCobSRSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams)
             {   
                 if(rspResult == DEVICE_CAN_FRAME_RSP_OK)
                 {
-                    if(~a_CheckStateBit(g_nDeviceStatus, DEVICE_STATUS_BOO_UP_OK))
-                    {
-                        a_SetStateBit(g_nDeviceStatus, DEVICE_STATUS_BOO_UP_OK);                //不工作或者？？？？？？？？
-                    }
                     result = DEVICE_CAN_FRAME_RESULT_CHKER;
                 }
             }
@@ -710,7 +757,7 @@ void Device_GetSubDeviceVersion(u8 addr, CAN_FRAME *pTxFrame)
     pTxFrame->buffer[1] = DEVICE_CAN_FRAME_RFU;
     
     pTxFrame->buffer[2] = 0x00;
-    xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);
+    xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);                         //可能毒死？？？
     
     pTxFrame->buffer[2] = 0x01;
     xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);
@@ -733,7 +780,8 @@ void Device_GetSubDeviceVersion(u8 addr, CAN_FRAME *pTxFrame)
 //因数据包短，硬件层右冲突校验且为多主从方案，考虑弃用一问一答方案，采用数据固定位和心跳来确定设备在线
 void Device_CanRxDispatch(void *p)
 {
-    CAN_FRAME canRxFrame = {0};    
+    CAN_FRAME canRxFrame = {0};   
+    CAN_FRAME canTxFrame = {0};
     u8 result = DEVICE_CAN_FRAME_RESULT_NO_RSP;
     u32 coBid = 0, addr = 0;
     u8 *pParams = NULL, paramsLen = 0;
@@ -745,18 +793,9 @@ void Device_CanRxDispatch(void *p)
         {
             CAN_FRAME *pRxFrame = &canRxFrame;
             
-            if(pRxFrame->staus)
-            {
-                rCmd = pRxFrame->buffer[CAN_RCV_LONG_FRAME_POS_CMD];
-                pParams = pRxFrame->buffer + DEVICE_CAN_RSP_POS_LOMG_PARAMS;
-                paramsLen = pRxFrame->buffer[CAN_RCV_LONG_FRAME_POS_LENTH] - 4;
-            }
-            else
-            {
-                rCmd = pRxFrame->buffer[CAN_RCV_FRAME_POS_CMD];
-                pParams = pRxFrame->buffer;
-                paramsLen = pRxFrame->len;                  //cmd不计入
-            }
+            rCmd = pRxFrame->buffer[CAN_RCV_FRAME_POS_CMD];
+            pParams = pRxFrame->buffer;
+            paramsLen = pRxFrame->len;                  //cmd不计入
 
             if(pRxFrame->coBid ^ DEVICE_COM_BASE_BOAD_COBID)
             {
@@ -768,7 +807,7 @@ void Device_CanRxDispatch(void *p)
                 addr = coBid = DEVICE_COM_BASE_BOAD_COBID;
             }
             
-            xQueuePeek(g_hCanTxQueue, &g_sTempCanFrame, 0);
+            xQueuePeek(g_hCanTxQueue, &canTxFrame, 0);
             switch(coBid)
             {
                 case DEVICE_COB_ID_MT_SDO:
@@ -776,7 +815,7 @@ void Device_CanRxDispatch(void *p)
                     result = Device_ProcessCobMTSdo(addr, rCmd, paramsLen, pParams);
                 break;
                 case DEVICE_COB_ID_MR_SDO:
-                    result = Device_ProcessCobMRSdo(addr, rCmd, paramsLen, pParams, &g_sTempCanFrame);
+                    result = Device_ProcessCobMRSdo(addr, rCmd, paramsLen, pParams, &canTxFrame);
                 break;
                 case DEVICE_COB_ID_ST_SDO:
                     result = Device_ProcessCobSTSdo(addr, rCmd, paramsLen, pParams);
@@ -804,6 +843,10 @@ void Device_CanRxDispatch(void *p)
             }
             else if(result == DEVICE_CAN_FRAME_RESULT_CHKOK)
             {
+                if(canTxFrame.staus == CAN_FRAME_STATUS_REPORT)     //此帧需要上报
+                {
+                    memcpy(&g_sRspCanFrame, pRxFrame, sizeof(CAN_FRAME));
+                }
                 xSemaphoreGive(g_hCanComStatus);            //校验成功
             }
         }
@@ -813,14 +856,14 @@ void Device_CanRxDispatch(void *p)
 
 void Device_CanTxDispatch(void *p)
 {
-    CAN_FRAME canTxFrame = {0};
+    CAN_FRAME canTxFrame = {0};  
     BOOL result = FALSE;    
     u8 repat = 0;
     const u32 canTxDelayTime = pdMS_TO_TICKS(21);
     const u32 canTxRepatTime = pdMS_TO_TICKS(100);
     while(1)
     {
-        if(xQueuePeek(g_hCanTxQueue, &canTxFrame, portMAX_DELAY) == pdTRUE)
+        if(xQueuePeek(g_hCanTxQueue, &canTxFrame, portMAX_DELAY) == pdTRUE)                     //可能堵塞死？？？
         {
             CAN_FRAME *pTxFrame = &canTxFrame;
             
@@ -830,10 +873,15 @@ void Device_CanTxDispatch(void *p)
                 if(pTxFrame->flag == CAN_FRAME_FLAG_NEED_RSP)
                 {
                     vTaskDelay(canTxDelayTime);                                                     //实际八字节以内交互时间相当短
-                    if(xSemaphoreTake(g_hCanComStatus, canTxRepatTime) == pdTRUE)              //别毒死
+                    if(xSemaphoreTake(g_hCanComStatus, canTxRepatTime) == pdTRUE)                   //别毒死
                     {
                         result = TRUE;
                         repat = 0;
+                        if(canTxFrame.staus == CAN_FRAME_STATUS_REPORT)                             //此帧需要上报
+                        {
+                            Device_DtuCanOk();
+                            xSemaphoreGive(g_hUartComStatus); 
+                        }
                     }
                     else
                     {
@@ -842,12 +890,17 @@ void Device_CanTxDispatch(void *p)
                         {
                             result = TRUE;
                             repat = 0;
+                            if(canTxFrame.staus == CAN_FRAME_STATUS_REPORT)                         //此帧需要上报
+                            {
+                                Device_DtuCanErr();
+                                xSemaphoreGive(g_hUartComStatus); 
+                            }
                         }
                     }
                     
                     if(result)
                     {
-                        if(xQueueReceive(g_hCanTxQueue, &g_sTempCanFrame, portMAX_DELAY) == pdFALSE)         //校验成功，清除队列数据。此处校验队列问题
+                        if(xQueueReceive(g_hCanTxQueue, &canTxFrame, portMAX_DELAY) == pdFALSE)         //校验成功，清除队列数据。此处校验队列问题
                         {
                             result = TRUE;
                         }
@@ -855,7 +908,7 @@ void Device_CanTxDispatch(void *p)
                 }
                 else
                 {
-                    if(xQueueReceive(g_hCanTxQueue, &g_sTempCanFrame, portMAX_DELAY) == pdFALSE)
+                    if(xQueueReceive(g_hCanTxQueue, &canTxFrame, portMAX_DELAY) == pdFALSE)
                     {
                         result = FALSE;
                     }
@@ -901,14 +954,13 @@ void Device_HeartDispatch(void *p)
                 }
             }
 
-            vTaskDelay(heartChkTime);          
-            
             pTxFrame->flag = CAN_FRAME_FLAG_NO_RSP;
             pTxFrame->coBid = DEVICE_COM_BASE_BOAD_COBID;
             memcpy(pTxFrame->buffer, heartFrame, 3);
             pTxFrame->len = 3;
             xQueueSend(g_hCanTxQueue, &canTxFrame, portMAX_DELAY);
         }
+        vTaskDelay(heartChkTime); 
     }
 }
 void Device_MainDispatch(void *p)
@@ -916,7 +968,7 @@ void Device_MainDispatch(void *p)
     while(1)
     {
 
-        vTaskDelay(1000);
+        vTaskDelay(2000);
         Device_CanAutoTask();                   //test
     }
 }
@@ -925,20 +977,42 @@ void Device_UartRxDispatch(void *p)
 {
     UART_RCVFRAME uartRxFreme = {0};
     UART_TXFRAME uartTxFreme = {0};
+    const u32 uartTxDelayTime = pdMS_TO_TICKS(100);
     u16 startPos = 0;
+    BOOL repot = TRUE;
     while(1)
     {
-        if(xQueueReceive(g_hUartRxQueue, &uartRxFreme, portMAX_DELAY) == pdTRUE)
+        if(xQueuePeek(g_hUartRxQueue, &uartRxFreme, portMAX_DELAY) == pdTRUE)
         {
             if(uartRxFreme.length >= UART_FRAME_MIN_LEN)
             {
                 if(Uart_UsrCheckFrame(uartRxFreme.buffer, uartRxFreme.length, &startPos))
                 {
-                    uartTxFreme.len = Reader_ProcessUartFrame(uartRxFreme.buffer + startPos, &uartTxFreme);
-                    if(uartTxFreme.result == UART_COM_RESULT_NEED_RSP)
+                    if(repot)
                     {
-                        uartTxFreme.com = uartRxFreme.com;
-                        xQueueSend(g_hUartTxQueue, &uartTxFreme, portMAX_DELAY);
+                        uartTxFreme.len = Reader_ProcessUartFrame(uartRxFreme.buffer + startPos, &uartTxFreme);
+                        if(uartTxFreme.result == UART_COM_RESULT_NEED_RSP)
+                        {
+                            uartTxFreme.com = uartRxFreme.com;
+                            xQueueSend(g_hUartTxQueue, &uartTxFreme, portMAX_DELAY);
+                            xQueueReceive(g_hUartRxQueue, &uartRxFreme, portMAX_DELAY);
+                        }
+                        else if(uartTxFreme.result == UART_COM_RESULT_NO_RSP)
+                        {
+                            repot = FALSE;
+                            Can_ClearRspInfo();
+                        }
+                    }
+                    else
+                    {
+                        if(xSemaphoreTake(g_hUartComStatus, uartTxDelayTime) == pdTRUE)
+                        {
+                            repot = TRUE;
+                            g_sUartTxFrame.com = uartRxFreme.com;
+                            g_sUartTxFrame.len = Device_ResponseFrame(g_sRspCanFrame.buffer, g_sRspCanFrame.len, &g_sUartTxFrame);
+                            xQueueReceive(g_hUartRxQueue, &uartRxFreme, portMAX_DELAY);
+                            xQueueSend(g_hUartTxQueue, &g_sUartTxFrame, portMAX_DELAY);
+                        }
                     }
                 }
             }
@@ -962,6 +1036,10 @@ void Device_UartTxDispatch(void *p)
             {
                 Uart_EnableTxDma(uartTxFreme.buffer, uartTxFreme.len);
             }
+            else if(uartTxFreme.com == UART_COM_LAN)
+            {
+                Lan_EnableTxDma(uartTxFreme.buffer, uartTxFreme.len);
+            }
         }
         else
         {
@@ -970,3 +1048,20 @@ void Device_UartTxDispatch(void *p)
     }
 }
 
+void Device_HLDispatch(void *p)
+{
+    while(1)
+    {
+        if(USART_GetFlagStatus(UART_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
+        {
+            USART_ITConfig(UART_PORT, USART_IT_RXNE, DISABLE);
+            USART_ClearFlag(UART_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE);
+            vTaskDelay(10);
+            Uart_DisableRxDma();
+            
+            Uart_Init(UART_BAUDRARE);           //清除上电所创队列，否则栈空间一直压缩
+        }
+    
+    
+    }
+}

@@ -54,7 +54,7 @@
         <ITMlogFile>$PROJ_DIR$\ITM.log</ITMlogFile>
     </SWOTraceHWSettings>
     <DebugChecksum>
-        <Checksum>3620454884</Checksum>
+        <Checksum>1170625742</Checksum>
     </DebugChecksum>
     <struct_types>
         <Fmt0>DEVICE_INFO-heartTime	3	0</Fmt0>
@@ -149,12 +149,10 @@
     <Breakpoints2>
         <Bp0>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.0.1" 0 0 1 "" 0 "" 0</Bp0>
         <Bp1>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.0.1" 0 0 1 "" 0 "" 0</Bp1>
-        <Bp2>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\Rtos_HL.C}.197.5" 0 0 1 "" 0 "" 0</Bp2>
-        <Bp3>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Uart_Receive.c}.18.46" 0 0 1 "" 0 "" 0</Bp3>
-        <Bp4>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.239.5" 0 0 1 "" 0 "" 0</Bp4>
-        <Bp5>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.230.17" 0 0 1 "" 0 "" 0</Bp5>
-        <Bp6>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\main.c}.13.5" 0 0 1 "" 0 "" 0</Bp6>
-        <Count>7</Count>
+        <Bp2>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.237.5" 0 0 1 "" 0 "" 0</Bp2>
+        <Bp3>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.229.17" 0 0 1 "" 0 "" 0</Bp3>
+        <Bp4>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.306.17" 0 0 1 "" 0 "" 0</Bp4>
+        <Count>5</Count>
     </Breakpoints2>
     <Aliases>
         <A0>_ "E:\AnyID\Git\RP3423_MB\stm32f10x_it.c" ""</A0>

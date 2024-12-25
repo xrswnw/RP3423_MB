@@ -1,9 +1,6 @@
 #include "AnyID_CanFestival_SysCfg.h"
 
 u32 g_nSysState = SYS_STAT_IDLE;
-u32 g_nLedDelayTime = 0;
-
-u32 g_nChkComTime = 0;
 
 #if SYS_ENABLE_WDT
     #define SYS_ENABLE_TEST         0
@@ -18,7 +15,6 @@ void Sys_Delayms(u32 n)
     n++;
     while(n--);
 }
-
 
 void Sys_CfgClock(void)
 {
@@ -94,8 +90,7 @@ void Sys_CfgPeriphClk(FunctionalState state)
                            RCC_APB1Periph_UART4 |
                            RCC_APB1Periph_USART3 |
                            RCC_APB1Periph_WWDG , state);
-    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 |
-                        RCC_AHBPeriph_DMA2, state);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_DMA2, state);
 }
 
 void Sys_CfgNVIC(void)
@@ -153,22 +148,23 @@ void Sys_Init(void)
 		#endif
 	}
 
-    Lan_InitInterface(LAN_BAUDRARE);
-    Lan_ConfigInt();
-    Lan_EnableInt(ENABLE, DISABLE);
-    
-    
-    Wifi_InitInterface(WIFI_BAUDRARE);
-    Wifi_ConfigInt();
-    Wifi_InitTxDma(g_sWifiTxInfo.txFrame, WIFI_FRAME_MAX_LENTH);
-    Wifi_InitRxDma(g_sWifiRcvFrame.buffer, UART_BUFFER_MAX_LEN);
-    
+    //Wifi_Init(WIFI_BAUDRARE);
     
     Uart_Init(UART_BAUDRARE);
+    
+    Lan_Init(UART_BAUDRARE);
+    
+    Flash_InitInterface();
+    if(Flash_ChkErr() == FALSE)
+    {   //FLASH问题，报警指示
+    
+    
+    }
         
     Periph_InitInterface();
+    
 	Device_Init();
-	Sys_Delayms(50);
+    
 	#if SYS_ENABLE_WDT
 	WDG_FeedIWDog();
 	#endif
@@ -189,75 +185,17 @@ void Sys_LedTask(void)
 	}
 }
 
-
-void Sys_Rs485Task(void)
-{
-
-
-}
-
-void Sys_LanTask(void)
-{
-    if(USART_GetFlagStatus(LAN_PORT, USART_FLAG_ORE | USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
-    {
-        USART_ClearFlag(LAN_PORT, USART_FLAG_ORE | USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE);
-        Lan_InitInterface(LAN_BAUDRARE);
-        Lan_ConfigInt();
-        Lan_EnableInt(ENABLE, DISABLE);
-    }
-    if(Uart_IsRcvFrame(g_sLanRcvFrame))
-    {
-        memcpy(&g_sLanRcvTempFrame, &g_sLanRcvFrame, sizeof(g_sLanRcvFrame));
-        Uart_ResetFrame(&g_sLanRcvFrame);
-        
-        
-        
-        Wifi_EnableRxDma();
-        Wifi_WriteBuffer(g_sLanRcvTempFrame.buffer, g_sLanRcvTempFrame.length);
-      /*  if(g_sLanRcvTempFrame.length >= UART_FRAME_MIN_LEN)
-        {
-            u16 crc1 = 0, crc2 = 0;
-            
-            crc1 = Uart_GetFrameCrc(g_sLanRcvTempFrame.buffer, g_sLanRcvTempFrame.length);
-            crc2 = a_GetCrc(g_sLanRcvTempFrame.buffer + UART_FRAME_POS_LEN, g_sLanRcvTempFrame.length - 4);
-
-            if(crc1 == crc2)
-            {
-                u16 txLen = 0;
-                
-                txLen = Reader_ProcessUartFrame(g_sLanRcvTempFrame.buffer, g_sLanRcvTempFrame.length);
-                if(txLen > 0)
-                {
-                    a_SetStateBit(g_nSysState, SYS_STAT_RS485_TX);
-                }
-            }
-        }
-*/
-    }
-    
-    if(a_CheckStateBit(g_nSysState, SYS_STAT_RS485_TX))
-    {
-        a_ClearStateBit(g_nSysState, SYS_STAT_RS485_TX);
-        Lan_WriteBuffer(g_sReaderRspFrame.buffer, g_sReaderRspFrame.len);
-
-    }
-
-}
+TaskHandle_t g_hDevice_CanRxDispatch = NULL;
+TaskHandle_t g_hDevice_CanTxDispatch = NULL;
+TaskHandle_t g_hDevice_UartRxDispatch = NULL;
+TaskHandle_t g_hDevice_UartTxDispatch = NULL;
+TaskHandle_t g_hDevice_MainDispatch = NULL;
+TaskHandle_t g_hDevice_HeartDispatch = NULL;
 
 
-void Sys_DeviceTask(void)
-{
-    if(a_CheckStateBit(g_nSysState, SYS_STAT_CAN_AUTO_TASK))
-    {
-        Device_CanAutoTask();
-        a_ClearStateBit(g_nSysState, SYS_STAT_CAN_AUTO_TASK);
-    }
-    
-    Device_OpTask();
-}
-
-
-
+#if FREE_RTOS_ENABLE_ERR_LOG
+    TaskHandle_t g_hSys_RunTime = NULL;
+#endif
 void Sys_TaskCreat()
 {
     portENTER_CRITICAL();
@@ -268,34 +206,76 @@ void Sys_TaskCreat()
     #endif
     
     #if configUSE_STATS_FORMATTING_FUNCTIONS
-        xTaskCreate(Sys_RunTime, "Sys_RunTime", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
+        xTaskCreate(Sys_RunTime, "Sys_RunTime", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, &g_hSys_RunTime);
     #endif
 
-    xTaskCreate(Device_CanRxDispatch, "Device_CanRxDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-    xTaskCreate(Device_CanTxDispatch, "Device_CanTxDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(Device_CanRxDispatch, "Device_CanRxDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_CanRxDispatch);
+    xTaskCreate(Device_CanTxDispatch, "Device_CanTxDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_CanTxDispatch);
     
-    xTaskCreate(Device_UartRxDispatch, "Device_UartRxDispatch", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY + 1, NULL);
-    xTaskCreate(Device_UartTxDispatch, "Device_UartTxDispatch", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(Device_UartRxDispatch, "Device_UartRxDispatch", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_UartRxDispatch);
+    xTaskCreate(Device_UartTxDispatch, "Device_UartTxDispatch", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_UartTxDispatch);
     
-    xTaskCreate(Device_MainDispatch, "Device_MainDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-    xTaskCreate(Device_HeartDispatch, "Device_HeartDispatch", configMINIMAL_STACK_SIZE / 4, NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(Device_MainDispatch, "Device_MainDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_MainDispatch);
+    xTaskCreate(Device_HeartDispatch, "Device_HeartDispatch", configMINIMAL_STACK_SIZE / 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_HeartDispatch);
     
-
     vTaskDelete(NULL);
     
     //Exti Ceitical
     portEXIT_CRITICAL();
 }
 
-//监控各个任务所占时间，调试使用
-//监控各个任务的堆栈使用情况，尽量保持再分配空间的2/3内，否则溢出会导致任务切换错误
-void Sys_RunTime(void *p)
-{
-    char frame[128] = {0};          //堆栈区间过小可能导致越界
-    while(1)
+
+#if FREE_RTOS_ENABLE_ERR_LOG
+    //监控各个任务所占时间，调试使用
+    //监控各个任务的堆栈使用情况，尽量保持再分配空间的2/3内，否则溢出会导致任务切换错误
+    //按时间情况测试，如果队列毒死，可超时时间拉低，但需找到毒死具体原因，尽量减小开销
+    void Sys_RunTime(void *p)
     {
-        vTaskGetRunTimeStats(frame);
-        Log_WriteBuffer((u8 *)frame, strlen(frame));
-        vTaskDelay(pdMS_TO_TICKS( 1000  + 900 + 3));
+        char frame[1024] = {0};          //堆栈区间过小可能导致越界
+        while(1)
+        {
+            
+            Log_WriteStr("\r\nThe task run time :\r\n");
+            vTaskGetRunTimeStats(frame);
+            
+            Log_WriteBuffer((u8 *)frame, strlen(frame));
+            
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            
+            Log_WriteStr("\r\nThe task free stack size :\r\n");
+              
+            sprintf(frame, "%s : Sys_RunTime : The free stack size is %d byte\r\n",  
+                    pcTaskGetName(g_hSys_RunTime), 4 * uxTaskGetStackHighWaterMark(g_hSys_RunTime));
+            
+            sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
+                    pcTaskGetName(g_hDevice_CanRxDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_CanRxDispatch));
+            
+            sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
+                    pcTaskGetName(g_hDevice_CanTxDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_CanTxDispatch));
+            
+            sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
+                    pcTaskGetName(g_hDevice_UartRxDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_UartRxDispatch));
+            
+            sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
+                    pcTaskGetName(g_hDevice_UartTxDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_UartTxDispatch));
+            
+            sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
+                    pcTaskGetName(g_hDevice_MainDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_MainDispatch));
+            
+            sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
+                    pcTaskGetName(g_hDevice_HeartDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_HeartDispatch));
+            
+            Log_WriteBuffer((u8 *)frame, strlen(frame));
+            
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            
+            vTaskList(frame);
+            
+            Log_WriteStr("\r\nThe task state :\r\n");
+            
+            Log_WriteBuffer((u8 *)frame, strlen(frame));
+            
+            vTaskDelay(pdMS_TO_TICKS(2000));
+        }
     }
-}
+#endif

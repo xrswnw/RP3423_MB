@@ -180,7 +180,8 @@ BOOL Can_TxFramesRepat(CAN_FRAME *pFrame)
 QueueHandle_t g_hCanRxQueue = NULL;
 QueueHandle_t g_hCanTxQueue = NULL;
 QueueHandle_t g_hCanComStatus = NULL;
-CAN_FRAME g_sTempCanFrame = {0};
+
+CAN_FRAME g_sRspCanFrame = {0};
 BOOL Can_QueueCreatTask()
 {
     BOOL bOk = FALSE;
@@ -191,7 +192,7 @@ BOOL Can_QueueCreatTask()
     if(g_hCanRxQueue && g_hCanTxQueue && g_hCanComStatus)
     {
         bOk = TRUE;
-        xSemaphoreGive(g_hCanComStatus);
+        //xSemaphoreGive(g_hCanComStatus);
     }
 
     return bOk;

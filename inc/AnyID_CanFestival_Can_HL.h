@@ -10,10 +10,10 @@
 	
 #define CAN_SEND_TIMEOUT            0x1FFF						            //超时时间是否以最低速为基准值？？？？？？？？？？
 
-#define CAN_FRAME_MAX_LEN                8
+#define CAN_FRAME_MAX_LEN           8
 	
-#define CAN_HARD_REAST_MAX_TICK         10
-#define CAN_RGE_ESR_BOFF_ON             0x00000004			                                //设备can离线？？设备自动离开网络
+#define CAN_HARD_REAST_MAX_TICK     10
+#define CAN_RGE_ESR_BOFF_ON         0x00000004			                                //设备can离线？？设备自动离开网络
 
 #define CAN_PSC_BUD_1M                  12
 #define CAN_PSC_BUD_800K                15
@@ -41,17 +41,17 @@
 
 #define CAN_FRAME_MAX_LENTH         8
 
-#define CAN_FRAME_STATUS_STD        0x00
-#define CAN_FRAME_STATUS_LONG       0x01
+#define CAN_FRAME_STATUS_NORMAL     0x00
+#define CAN_FRAME_STATUS_REPORT     0x01
 
-#define CAN_FRAME_FLAG_NO_RSP        0x00
-#define CAN_FRAME_FLAG_NEED_RSP        0x01
+#define CAN_FRAME_FLAG_NO_RSP       0x00
+#define CAN_FRAME_FLAG_NEED_RSP     0x01
 typedef struct canFrame{
     u8 staus;
     u8 flag;
     u8 index;
     u8 len;
-    u8  cmd;
+    u8 cmd;
     u32 coBid;
     u8 buffer[CAN_FRAME_MAX_LENTH];
 }CAN_FRAME;
@@ -96,7 +96,7 @@ typedef struct canRxFrame{
 }CAN_RXFRAME;
 
 
-extern CAN_FRAME g_sCanRspFrame;
+
 
 
 BOOL Can_InitInterface(u8 psc);
@@ -106,12 +106,15 @@ BOOL CanTxTransm(CanTxMsg *pFrame);
 void Can_ReceiveFrame(CanRxMsg *pRcvFrame);
 BOOL Can_TxFrames(CAN_FRAME *pTxFrame);
 BOOL Can_TxFramesRepat(CAN_FRAME *pFrame);
-
 //
+extern CAN_FRAME g_sCanRspFrame;
+extern CAN_FRAME g_sRspCanFrame;
 extern QueueHandle_t g_hCanRxQueue;
 extern QueueHandle_t g_hCanTxQueue;
 extern QueueHandle_t g_hCanComStatus;
-extern CAN_FRAME g_sTempCanFrame;
+
+#define Can_ClearRspInfo()          do{memset(&g_sRspCanFrame, 0, sizeof(CAN_FRAME));}while(0)
+
 BOOL Can_QueueCreatTask();
 
 #endif

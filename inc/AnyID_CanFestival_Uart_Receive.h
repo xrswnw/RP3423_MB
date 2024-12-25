@@ -12,14 +12,6 @@
 #define UART_FRAME_FLAG_HEAD1           0x7E
 #define UART_FRAME_FLAG_HEAD2           0x55
 
-#define UART_FLAG_RCV                   0x80
-#define UART_STAT_IDLE                  0x00
-#define UART_STAT_HEAD1                 0x81
-#define UART_STAT_HEAD2                 0x82
-#define UART_STAT_DATA                  0x84
-#define UART_STAT_TO                    0x05
-#define UART_STAT_END                   0x06
-
 #define UART_FRAME_POS_HEAD1            0
 #define UART_FRAME_POS_HEAD2            1
 #define UART_FRAME_POS_LEN              2
@@ -30,8 +22,6 @@
 #define UART_FRAME_POS_PAR              9
 
 #define UART_FRAME_POS_SOUCER_ADD       2
-
-
 
 #define UART_FRAME_POS_MQTT_CMD         0
 #define UART_FRAME_POS_MQTT_NORMAL_LEN  0x20 
@@ -83,6 +73,7 @@ typedef struct uartRcvFrame{
 
 typedef struct uartTxFrame{
     u8 result;
+    u8 op;
     u16 len;
     u8 buffer[UART_BUFFER_MAX_LEN];
     u8 flag;
@@ -96,7 +87,26 @@ extern UART_RCVFRAME g_sUartRxFrame;
 extern UART_TXFRAME g_sUartTxFrame;
 
 
-void Uart_ReceiveFrame(u8 byte, UART_RCVFRAME *pRcvFrame);
+
+#define UART_COM_RESULT_NO_RSP                              0x00
+#define UART_COM_RESULT_NEED_RSP                            0x01
+                                              
+                                              
+                                              
+#define UART_COM_RESULT_OP_SUBDEVICE                        0x01                                             
+                                              
+                                              
+
+#define UART_COM_CMD_GET_VERSION                            0xF7
+#define UART_COM_CMD_SUBDEVICE_DTU                          0xFE
+
+#define UART_STAT_TO                    0x02
+#define UART_STAT_OVR                   0x01
+#define UART_STAT_END                   0x03
+#define UART_STAT_IDLE                  0x40
+#define UART_STAT_RCV                   0x80
+#define UART_STAT_MSK                   0xC0
+
 #define Uart_IncIdleTime(t, rcvFrame)      do{\
                                                 if((rcvFrame).state & UART_FLAG_RCV)\
                                                 {\
@@ -107,16 +117,22 @@ void Uart_ReceiveFrame(u8 byte, UART_RCVFRAME *pRcvFrame);
                                                     }\
                                                 }\
                                             }while(0)
-                                              
-                                              
-#define UART_COM_RESULT_NEED_RSP                    0x01
-                                              
-#define UART_COM_CMD_GET_VERSION                            0xF7
-                                              
 
 BOOL Uart_IsRcvFrameOver(UART_RCVFRAME *pRcvFrame);
 #define Uart_IsRcvFrame(rcvFrame)           ((rcvFrame).state == UART_STAT_TO || (rcvFrame).state == UART_STAT_END)
-#define Uart_ResetFrame(rcvFrame)           do{(rcvFrame)->state = UART_STAT_IDLE; (rcvFrame)->length = 0; (rcvFrame)->index = 0; (rcvFrame)->idleTime = 0;}while(0)
+#define Uart_ResetFrame(rcvFrame)           do{(rcvFrame).state = UART_STAT_IDLE; (rcvFrame).length = 0; (rcvFrame).idleTime = 0; memset((rcvFrame).buffer, 0, UART_BUFFER_MAX_LEN); }while(0)
+
+#define Uart_ReceiveFrame(byte, rcvFrame) do{\
+                                                if((rcvFrame).state & UART_STAT_MSK)\
+                                                {\
+                                                    (rcvFrame).state |= UART_STAT_RCV;\
+                                                    (rcvFrame).buffer[(rcvFrame).length++] = (byte);\
+                                                    if((rcvFrame).length == UART_BUFFER_MAX_LEN)\
+                                                    {\
+                                                        (rcvFrame).state = UART_STAT_OVR;\
+                                                    }\
+                                                }\
+                                             }while(0)
 
 #define UART_COM_232                    0x01
 #define UART_COM_485                    0x02

@@ -193,7 +193,7 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
 /*-----------------------------------------------------------*/
 
 static void prvTaskExitError( void )
-{
+{//调试暂停会跳入，不用理会，其它原因进入可能需要添加狗子分析
     /* A function that implements a task must not exit or attempt to return to
      * its caller as there is nothing to return to.  If a task wants to exit it
      * should instead call vTaskDelete( NULL ).
@@ -598,7 +598,7 @@ __weak void vPortSetupTimerInterrupt( void )
     portNVIC_SYSTICK_CURRENT_VALUE_REG = 0UL;
 
     /* Configure SysTick to interrupt at the requested rate. */
-    portNVIC_SYSTICK_LOAD_REG = ( configSYSTICK_CLOCK_HZ / configTICK_RATE_HZ ) - 1UL;				//重装载，例，从72000递减，至零时重装载，同时产生SysTick中断
+    portNVIC_SYSTICK_LOAD_REG = ( configSYSTICK_CLOCK_HZ / configTICK_RATE_HZ ) - 1UL;				//重装载，例，从120000000递减，至零时重装载，同时产生SysTick中断
     portNVIC_SYSTICK_CTRL_REG = ( portNVIC_SYSTICK_CLK_BIT_CONFIG | portNVIC_SYSTICK_INT_BIT | portNVIC_SYSTICK_ENABLE_BIT );		//时钟源选择、内核时间
 }
 /*-----------------------------------------------------------*/

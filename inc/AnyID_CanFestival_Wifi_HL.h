@@ -6,62 +6,41 @@
 #define WIFI_PORT                       USART2
 #define Wifi_IRQHandler                 USART2_IRQHandler
 
+#define STR_HEX_CR			            0x0D			//\r
+#define STR_HEX_LF			            0x0A			//\n
+
+#define WIFI_FEAME_RX_LEN               4096
+#define WIFI_FEAME_TX_LEN               512
+#define WIFI_RRAME_RX_MIN_LEN           4               //OK\R\N
+   
 #define WIFI_BAUDRARE                   115200
-
 #define Wifi_ReadByte()                 ((u16)(WIFI_PORT->DR & (u16)0x01FF))
-#define Wifi_ChkTxOver()                 while(((WIFI_PORT)->SR & USART_FLAG_TC) == (u16)RESET)
+                                                 
+extern const PORT_INF WIFI_PORT_RST;
+#define WIFI_RstLow()				    WIFI_PORT_RST.Port->BRR = WIFI_PORT_RST.Pin
+#define WIFI_RstHigh()				    WIFI_PORT_RST.Port->BSRR = WIFI_PORT_RST.Pin
 
+#define WIFI_RCV_TIMER                  TIM4
+#define WIFI_RCV_TIM_WIFI               20000 
+#define WIFI_RCV_TIM_9600               4010  //3.5 * 11 * (1/9600) * 1000
+#define WIFI_RCV_TIM_9600M              1750  //超过19200bps都采用1750us
+#define WIFI_RCV_TIM_PRESCALER          119   //120Mhz
+#define WIFI_RCV_TIMER_INT              TIM4_IRQn
+#define Wifi_ClearRcvTimFlag()          (WIFI_RCV_TIMER)->SR = (uint16_t)(~TIM_FLAG_Update)
+#define Wifi_StartRcvTim()              (WIFI_RCV_TIMER)->CR1 |= TIM_CR1_CEN
+#define Wifi_StopRcvTim()               (WIFI_RCV_TIMER)->CR1 &= (~TIM_CR1_CEN)
+#define Wifi_UpdateTimerPeriod(t)       ((WIFI_RCV_TIMER)->ARR = (t), (WIFI_RCV_TIMER)->EGR = TIM_PSCReloadMode_Immediate)
+#define Wifi_ResetTimCnt()              WIFI_RCV_TIMER->CNT = 1
 
-                                                
-#define WIFI_SR_IDLE                        0x0010  
-#define WIFI_DMA                            DMA1
-
-#define WIFI_TXDMA_CH                       DMA1_Channel7
-#define WIFI_TXDMA_INT                      DMA1_Channel7_IRQn
-#define WIFI_TXDMA_TC_FLAG                  DMA1_FLAG_TC7
-#define Wifi_TxDMAIRQHandler                DMA1_Channel7_IRQHandler
-
-
-#define Wifi_EnableTxDma(p, s)               do{\
-                                                    (WIFI_DMA)->IFCR = WIFI_TXDMA_TC_FLAG; \
-                                                    (WIFI_TXDMA_CH)->CMAR = ((u32)(p)); \
-                                                    (WIFI_TXDMA_CH)->CNDTR = (s); \
-                                                    (WIFI_TXDMA_CH)->CCR |= CCR_ENABLE_Set; \
-                                                }while(0)
-                                                                                             
-#define Wifi_DisableTxDma()                  do{\
-                                                    (WIFI_DMA)->IFCR = WIFI_TXDMA_TC_FLAG;\
-                                                    (WIFI_TXDMA_CH)->CCR &= CCR_ENABLE_Reset;\
-                                                    Wifi_ChkTxOver();\
-                                                }while(0)
-
-#define WIFI_RXDMA_CH                       DMA1_Channel6
-#define WIFI_RXDMA_INT                      DMA1_Channel6_IRQn
-#define WIFI_RXDMA_TC_FLAG                  DMA1_FLAG_TC6
-#define Wifi_RxDMAIRQHandler                DMA1_Channel6_IRQHandler
-#define Wifi_EnableRxDma()                  do{\
-                                                (WIFI_DMA)->IFCR = WIFI_RXDMA_TC_FLAG; \
-                                                (WIFI_RXDMA_CH)->CNDTR = UART_BUFFER_MAX_LEN; \
-                                                (WIFI_RXDMA_CH)->CCR |= CCR_ENABLE_Set; \
-                                            }while(0)
-                                            
-
-
-#define Wifi_DisableRxDma()                 do{\
-                                                (WIFI_DMA)->IFCR = WIFI_RXDMA_TC_FLAG;\
-                                                (WIFI_RXDMA_CH)->CCR &= CCR_ENABLE_Reset;\
-                                            }while(0)
-
-#define Wifi_GetRxLen()                     (UART_BUFFER_MAX_LEN - (WIFI_RXDMA_CH)->CNDTR)  
 
 void Wifi_InitInterface(u32 baudrate);
-void Wifi_ConfigInt(void);
+void Wifi_InitTimer(u32 baudrate);
+void Wifi_Delayms(u32 n) ;
 void Wifi_EnableInt(FunctionalState rxState, FunctionalState txState);
 void Wifi_WriteByte(u8 ch);
-void Wifi_WriteBuffer(u8 *pFrame, u16 len);
-void Wifi_InitTxDma(u8 *pTxBuffer, u32 len);
-void Wifi_InitRxDma(u8 *pRxBuffer, u32 len);
-void Wifi_WriteStr(char *str);
+void Wifi_WriteBuffer(u8 *pBuffer, u32 len);
+void Wifi_ConfigInt();
+void Wifi_WriteAtCmd(char *str);
 #endif
 
 

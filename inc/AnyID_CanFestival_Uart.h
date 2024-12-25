@@ -10,6 +10,6 @@
 
 extern QueueHandle_t g_hUartRxQueue;
 extern QueueHandle_t g_hUartTxQueue;
-
+extern QueueHandle_t g_hUartComStatus;
 BOOL Uart_Init(u32 bud);
 #endif

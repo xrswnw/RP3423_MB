@@ -26,7 +26,7 @@ void FRam_I2CDelay(void)
 
 void FRam_Delayms(u32 n)                                                         //œµÕ≥—” ±n∫¡√Î
 {
-    n *= 0x2800;
+    n *= 0x6000;
     n++;
     while(n--);
 }
