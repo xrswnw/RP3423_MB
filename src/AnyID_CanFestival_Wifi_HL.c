@@ -68,8 +68,8 @@ void Wifi_InitTimer(u32 baudrate)
     TIM_Cmd(WIFI_RCV_TIMER, DISABLE);
 
     NVIC_InitStructure.NVIC_IRQChannel = WIFI_RCV_TIMER_INT;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = INT_PRIORITY_UART_RX >> 2;
-  	NVIC_InitStructure.NVIC_IRQChannelSubPriority = INT_PRIORITY_UART_RX & 0x03;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = INT_PRIORITY_FREERTOS_UART;
+  	NVIC_InitStructure.NVIC_IRQChannelSubPriority = INT_PRIORITY_FREERTOS_UART;
   	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
   	NVIC_Init(&NVIC_InitStructure);
@@ -81,8 +81,8 @@ void Wifi_ConfigInt(void)
 
     NVIC_InitStructure.NVIC_IRQChannel = WIFI_INT_CHANNEL;
 
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = INT_PRIORITY_UART_RX >> 2;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = INT_PRIORITY_UART_RX & 0x03;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = INT_PRIORITY_FREERTOS_UART;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = INT_PRIORITY_FREERTOS_UART;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
     NVIC_Init(&NVIC_InitStructure);

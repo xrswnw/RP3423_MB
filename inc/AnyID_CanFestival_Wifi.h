@@ -13,7 +13,12 @@ extern UART_RCVFRAME g_sWifiRxFrame;
 extern UART_TXFRAME g_sWifiTxFrame;
 extern u32 g_nWifiStatus;
 
-
+#define WIFI_STATUS_AT_ERR_OR_NOSUPP        1
+#define WIFI_STATUS_WIFI_CONNET_OK          2
+#define WIFI_STATUS_WIFI_CONNET_FAIL        3
+#define WIFI_STATUS_SOCEKT_CONNET_OK        4
+#define WIFI_STATUS_SOCEKT_CONNET_FAIL      5
+#define WIFI_STATUS_OTHER_ERR               6
 
 
 //----------------------
@@ -47,14 +52,12 @@ extern u32 g_nWifiStatus;
 
 #define WIFI_CMD_AT_DIS_DTU                     25 
 
-
 #define WIFI_CMD_AT_WAIT                        31              
 
 #define WIFI_CONFIG_WIFI_SSID_MAX_LEN           32
 #define WIFI_CONFIG_WIFI_PWD_MAX_LEN            32
 #define WIFI_CONFIG_WIFI_IP_LEN                 4
 #define WIFI_CONFIG_WIFI_MAC_LEN                6
-
 
 #define WIFI_NET_CONFIG_STATION                 0x00
 #define WIFI_NET_CONFIG_AP                      0x01
@@ -96,7 +99,11 @@ typedef struct bw16StaionRegs{
     u32 rfu;
 }WIFI_STATIONREGS;
 
+#define WIFI_DISENABLE                          0x00
+#define WIFI_ENABLE                             0x01
+
 typedef struct bw16Regs{
+    u8 enable;
     WIFI_NETREGS netRegs;
     WIFI_STATIONREGS stationRegs;
 }WIFI_REGS;
@@ -128,7 +135,7 @@ typedef struct bw16OpTcpClientReg{
 
 #define WIFI_OP_MODE_IDLE               0x00
 #define WIFI_OP_MODE_DTU                0x01
-
+#define WIFI_OP_MODE_ERR                0x02
 
 #define WIFI_OP_STATE_IDEL              0x00
 #define WIFI_OP_STATE_TX                0x01
@@ -160,6 +167,9 @@ typedef struct bw16OpTcpClientReg{
 #define WIFI_DTU_STAT_DIS               0
 #define WIFI_DTU_STAT_CONWIFI           1
 #define WIFI_DTU_STAT_DTU               2
+
+#define WIFI_LOG_DISENABLE              0x00
+#define WIFI_LOG_ENABLE                 0x01
 typedef struct bw16OpRegs{
     u8 log;
     u8 dtuState;                        //dtu״̬
@@ -188,7 +198,6 @@ extern UART_RCVFRAME g_sWifiRcvFrame;
 #define WIFI_ANALSYS_INFO_SSID           0x05
 #define WIFI_ANALSYS_INFO_PWD            0x06
 
-
 #define Wifi_ChkDtu()                   (g_sWifiOpRegs.mode == WIFI_OP_MODE_DTU)
 
 #define Wifi_ClearOpInfo()              do{g_sWifiOpRegs.state = WIFI_OP_STATE_IDEL; g_sWifiOpRegs.index = 0; g_sWifiOpRegs.num = 0; g_sWifiRcvFrame.state = UART_STAT_IDLE;}while(0)
@@ -196,7 +205,6 @@ extern UART_RCVFRAME g_sWifiRcvFrame;
 #define Wifi_OpDelay(t)                 do{g_sWifiOpRegs.state = WIFI_OP_STATE_DELAY; g_sWifiOpRegs.tick = t; g_sWifiOpRegs.repeat = 0;}while(0)
 
 extern char g_aWifiTmpBuf[WIFI_FEAME_TX_LEN];
-void Wifi_Init(void);
 
 void Wifi_Connect(WIFI_OPREGS *pOpRegs, WIFI_REGS *pConRegs);
 void Wifi_QueneEnter(WIFI_OPREGS *pOpRegs, u8 op, u16 to);
@@ -217,4 +225,11 @@ BOOL Wifi_CheckClientConnected(char *str, WIFI_OPREGS *pOpRegs);
 BOOL Wifi_GetSocketReadInfo(char *str, WIFI_OPREGS *pOpRegs, u16 *pDatStart);
 BOOL Wifi_GetSocketDownInfo(char *str, WIFI_OPREGS *pOpRegs);
 BOOL Wifi_DelSocket(char *str);
+
+void Wifi_Init(u32 bud);
+void  Wifi_NetInit(void *p);
+
+BOOL Wifi_RcvQueue(QueueHandle_t queue);
+
+extern TaskHandle_t g_hWifi_NetInit;
 #endif

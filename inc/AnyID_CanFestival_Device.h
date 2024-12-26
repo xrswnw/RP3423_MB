@@ -393,4 +393,6 @@ void Device_HeartDispatch(void *p);
 
 void Device_UartRxDispatch(void *p);
 void Device_UartTxDispatch(void *p);
+
+void Device_HLDispatch(void *p);
 #endif

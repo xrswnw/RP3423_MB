@@ -13,21 +13,6 @@ BOOL Uart_Init(u32 bud)
     Uart_InitRxDma(g_sUartRxFrame.buffer, UART_BUFFER_MAX_LEN);
     Uart_EnableRxDma();
     
-    if(g_hUartRxQueue)
-    {
-        vQueueDelete(g_hUartRxQueue);
-    }
-    
-    if(g_hUartTxQueue)
-    {
-        vQueueDelete(g_hUartTxQueue);
-    }
-    
-    if(g_hUartComStatus)
-    {
-        vQueueDelete(g_hUartComStatus);
-    }
-    
     g_hUartRxQueue = xQueueCreate(UART_RX_FRAME_MAX_LEN, sizeof(UART_RCVFRAME));
     g_hUartTxQueue = xQueueCreate(UART_TX_FRAME_MAX_LEN, sizeof(UART_TXFRAME)); 
     g_hUartComStatus = xSemaphoreCreateBinary();

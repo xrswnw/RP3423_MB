@@ -3,49 +3,55 @@
 UART_RCVFRAME g_sWifiRxFrame = {0};
 UART_RCVFRAME g_sUartTempRcvFrame = {0};
 UART_TXFRAME g_sWifiTxFrame = {0};
+
+
+WIFI_OPREGS g_sWifiOpRegs = {0};
 u32 g_nWifiStatus = 0;
 
-void Wifi_Init()
+void Wifi_Init(u32 bud)
 {
-    //Wifi_InitInterface(bud);
-    //Wifi_ConfigInt();
-  //  Wifi_InitTxDma(g_sWifiTxFrame.buffer, UART_BUFFER_MAX_LEN);
-  //  Wifi_InitRxDma(g_sWifiRxFrame.buffer, UART_BUFFER_MAX_LEN);
+    Wifi_InitInterface(bud);
+    Wifi_ConfigInt();
+    Wifi_EnableInt(ENABLE, DISABLE);
+    Wifi_InitTimer(bud);
+    Wifi_StopRcvTim();
 }
+
+
+TaskHandle_t g_hWifi_NetInit = NULL;
 
 void  Wifi_NetInit(void *p)
 {
+    const u32 wifiLinkOpTime = pdMS_TO_TICKS(1000 * 10);
+    WIFI_REGS *pParams = NULL;
     while(1)
     {
-        if(USART_GetFlagStatus(WIFI_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
+        pParams = (WIFI_REGS *)p;
+        if(pParams->enable == WIFI_ENABLE)
         {
-            USART_ITConfig(WIFI_PORT, USART_IT_RXNE, DISABLE);
-             
-            //Sys_Delayms(2);
-            Uart_ResetFrame(g_sWifiRxFrame);
-            USART_ClearFlag(WIFI_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE); 
+            if(USART_GetFlagStatus(WIFI_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
+            {
+                USART_ITConfig(WIFI_PORT, USART_IT_RXNE, DISABLE);
+                 
+                Wifi_Delayms(2);
+                Uart_ResetFrame(g_sWifiRxFrame);
+                USART_ClearFlag(WIFI_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE); 
 
-            Wifi_Init();
-            Wifi_Connect(&g_sWifiOpRegs, (WIFI_REGS *)p);
-        }
-        
-        if(Uart_IsRcvFrame(g_sWifiRxFrame))  
-        {
-            memcpy(&g_sUartTempRcvFrame, &g_sWifiRxFrame, sizeof(UART_RCVFRAME));
-            Uart_ResetFrame(g_sWifiRxFrame);
+                Wifi_Init(WIFI_BAUDRARE);
+                Wifi_Connect(&g_sWifiOpRegs, (WIFI_REGS *)p);
+            }
             
-            if(g_sWifiOpRegs.log)
+            if(Uart_IsRcvFrame(g_sWifiRxFrame))  
             {
-                //R485_WriteBuffer(g_sUartTempRcvFrame.buffer, g_sUartTempRcvFrame.len);
-            }
-            if(g_sWifiOpRegs.mode == WIFI_OP_MODE_DTU)
-            {
-
+                memcpy(&g_sUartTempRcvFrame, &g_sWifiRxFrame, sizeof(UART_RCVFRAME));
+                Uart_ResetFrame(g_sWifiRxFrame);
                 
-            }
-            //RCV
-            else
-            {
+                if(g_sWifiOpRegs.log)
+                {
+                    Log_WriteBuffer(g_sUartTempRcvFrame.buffer, g_sUartTempRcvFrame.length);
+                    Log_WriteBuffer("\r\n", 2);
+                }
+
                 if(Wifi_ChkRcv(&g_sWifiOpRegs, g_sUartTempRcvFrame.buffer, g_sUartTempRcvFrame.length))
                 {
                     if(a_CheckStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_WAIT))                //接收好发送对一个
@@ -56,78 +62,135 @@ void  Wifi_NetInit(void *p)
                     }
                 }
             }
-        }
-        
-        //等待连接DTU
-        if(g_sWifiOpRegs.mode == WIFI_OP_MODE_IDLE)
-        {
-            if(a_CheckStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_TX))
+            
+            //等待连接DTU
+            if(g_sWifiOpRegs.mode == WIFI_OP_MODE_IDLE)
             {
-                a_ClearStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_TX);
-                if(Wifi_QueneChk(&g_sWifiOpRegs))
+                if(a_CheckStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_TX))
                 {
-                    Uart_ResetFrame(g_sWifiRxFrame);                                               //清空接收区
-                    Wifi_Tranceive(&g_sWifiOpRegs, g_nSysTick);
-                    a_SetStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_WAIT | WIFI_OP_STATE_RCV);
-                    if(g_sWifiOpRegs.log)
+                    a_ClearStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_TX);
+                    if(Wifi_QueneChk(&g_sWifiOpRegs))
                     {
-                       // R485_WriteBuffer((u8 *)g_aWifiTmpBuf, strlen(g_aWifiTmpBuf));
-                       // R485_WriteBuffer("\r\n", 2);
+                        Uart_ResetFrame(g_sWifiRxFrame);                                               //清空接收区
+                        Wifi_Tranceive(&g_sWifiOpRegs, g_nSysTick);
+                        a_SetStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_WAIT | WIFI_OP_STATE_RCV);
+                        if(g_sWifiOpRegs.log)
+                        {
+                           Log_WriteBuffer((u8 *)g_aWifiTmpBuf, strlen(g_aWifiTmpBuf));
+                           Log_WriteBuffer("\r\n", 2);
+                        }
                     }
                 }
-            }
-            else if(a_CheckStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_WAIT))
-            {
-                if(g_sWifiOpRegs.tick + g_sWifiOpRegs.to[g_sWifiOpRegs.index] < g_nSysTick)
+                else if(a_CheckStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_WAIT))
                 {
-                    g_sWifiOpRegs.repeat++;
-                    if(g_sWifiOpRegs.repeat <= WIFI_OP_REPAT_TICK)                                  //超过重复次数，直接重来
+                    if(g_sWifiOpRegs.tick + g_sWifiOpRegs.to[g_sWifiOpRegs.index] < g_nSysTick)
                     {
-                        a_SetState(g_sWifiOpRegs.state, WIFI_OP_STATE_TX);
-                    }
-                    else
-                    {
-                        if(g_sWifiOpRegs.mode == WIFI_OP_MODE_IDLE)
+                        g_sWifiOpRegs.repeat++;
+                        if(g_sWifiOpRegs.repeat <= WIFI_OP_REPAT_TICK)                                  //超过重复次数，直接重来
                         {
-                            Wifi_Connect(&g_sWifiOpRegs, (WIFI_REGS *)p);
+                            a_SetState(g_sWifiOpRegs.state, WIFI_OP_STATE_TX);
                         }
                         else
                         {
-                            a_SetState(g_sWifiOpRegs.state, WIFI_OP_STATE_STEP);
+                            if(g_sWifiOpRegs.mode == WIFI_OP_MODE_IDLE)
+                            {
+                                vTaskDelay(wifiLinkOpTime);                         //每十秒重试一次
+                                Wifi_Connect(&g_sWifiOpRegs, (WIFI_REGS *)p);
+                            }
+                            else
+                            {
+                                a_SetState(g_sWifiOpRegs.state, WIFI_OP_STATE_STEP);
+                            }
                         }
                     }
                 }
-            }
-            else if(a_CheckStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_DELAY))
-            {
-                if(g_sWifiOpRegs.tick + WIFI_OP_DELAY_TIME < g_nSysTick)
+                else if(a_CheckStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_DELAY))
                 {
-                    a_SetState(g_sWifiOpRegs.state, WIFI_OP_STATE_STEP);
-                }
-            }
-            else if(a_CheckStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_STEP))
-            {
-                a_ClearStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_STEP);
-                
-                g_sWifiOpRegs.repeat = 0;
-                if(Wifi_Step(&g_sWifiOpRegs))
-                {
-                    if(g_sWifiOpRegs.index >= g_sWifiOpRegs.num)
+                    if(g_sWifiOpRegs.tick + WIFI_OP_DELAY_TIME < g_nSysTick)
                     {
-                        if(g_sWifiOpRegs.mode == WIFI_OP_MODE_IDLE)
+                        a_SetState(g_sWifiOpRegs.state, WIFI_OP_STATE_STEP);
+                    }
+                }
+                else if(a_CheckStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_STEP))
+                {
+                    a_ClearStateBit(g_sWifiOpRegs.state, WIFI_OP_STATE_STEP);
+                    
+                    g_sWifiOpRegs.repeat = 0;
+                    if(Wifi_Step(&g_sWifiOpRegs))                               //等待sokect连接时增加一个指示
+                    {
+                        if(g_sWifiOpRegs.index >= g_sWifiOpRegs.num)
                         {
-                            g_sWifiOpRegs.mode = WIFI_OP_MODE_DTU;
-                            g_sWifiOpRegs.state = WIFI_OP_STATE_IDEL;
+                            if(g_sWifiOpRegs.mode == WIFI_OP_MODE_IDLE)
+                            {
+                                g_sWifiOpRegs.mode = WIFI_OP_MODE_DTU;
+                                g_sWifiOpRegs.state = WIFI_OP_STATE_IDEL;
+                                
+                                vTaskSuspend(NULL);                                 //初始化完成，暂停此任务
+                            }
                         }
-                    }
-                    else
-                    {
-                        a_SetState(g_sWifiOpRegs.state, WIFI_OP_STATE_TX);
+                        else
+                        {
+                            a_SetState(g_sWifiOpRegs.state, WIFI_OP_STATE_TX);
+                        }
                     }
                 }
             }
+            else if(g_sWifiOpRegs.mode == WIFI_OP_MODE_ERR)
+            {
+                Wifi_Delayms(2);
+                Uart_ResetFrame(g_sWifiRxFrame);
+                USART_ClearFlag(WIFI_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE); 
+
+                Wifi_Init(WIFI_BAUDRARE);
+                Wifi_Connect(&g_sWifiOpRegs, (WIFI_REGS *)p);
+            }
+        }    
+        else
+        {
+            g_nWifiStatus = WIFI_STATUS_AT_ERR_OR_NOSUPP;
+            vTaskSuspend(NULL);                                 //未启用WIFI，暂停此任务等待开启WIFI启用
         }
     }
+}
+
+BOOL Wifi_RcvQueue(QueueHandle_t queue)
+{
+    BOOL bOk = TRUE;
+    
+    if(Uart_IsRcvFrame(g_sWifiRxFrame) && (g_sWifiOpRegs.mode == WIFI_OP_MODE_DTU))  
+    {
+        memcpy(&g_sUartTempRcvFrame, &g_sWifiRxFrame, sizeof(UART_RCVFRAME));
+        Uart_ResetFrame(g_sWifiRxFrame);
+        
+        if(g_sWifiOpRegs.log)
+        {
+            Log_WriteBuffer(g_sUartTempRcvFrame.buffer, g_sUartTempRcvFrame.length);
+            Log_WriteBuffer("\r\n", 2);
+        }
+
+        Wifi_CheckEvent((char *)&g_sUartTempRcvFrame.buffer, &g_sWifiOpRegs);               //会多写入一帧，解析式再过滤
+        if(g_sWifiOpRegs.dtuState == WIFI_DTU_STAT_DTU)
+        {
+            g_nWifiStatus = WIFI_STATUS_SOCEKT_CONNET_OK;
+            g_sUartTempRcvFrame.com = UART_COM_WIFI;
+            if(xQueueSendFromISR(queue, &g_sUartTempRcvFrame, 0) == pdFAIL)
+            {
+                bOk = FALSE;
+            }
+        }
+        else if(g_sWifiOpRegs.dtuState == WIFI_DTU_STAT_CONWIFI)
+        {//sokect断开，灯光指示即可，等待重连
+            g_nWifiStatus = WIFI_STATUS_SOCEKT_CONNET_FAIL;
+        }
+        else if(g_sWifiOpRegs.dtuState == WIFI_DTU_STAT_DIS ||              //未测试
+                g_sWifiOpRegs.dtuState == WIFI_ERR_OTHER)
+        {//wifi断开或者其它错误，重新初始化
+            g_sWifiOpRegs.mode = WIFI_OP_MODE_ERR;
+            xTaskResumeFromISR(g_hWifi_NetInit);
+        }
+    }
+    
+    return bOk;
 }
 
 void Wifi_Connect(WIFI_OPREGS *pOpRegs, WIFI_REGS *pConRegs)
@@ -462,10 +525,10 @@ BOOL Wifi_GetSocketReadInfo(char *str, WIFI_OPREGS *pOpRegs, u16 *pDatStart)
     p = strstr(str, "CKETREAD,");
     if(p != NULL)
     {
-       p += strlen("CKETREAD,");
-       len = Wifi_SubDecStr(p, conStr, ',', WIFI_STR_DAT_BUF_SIZE);
-       if(len > 0)
-       {
+        p += strlen("CKETREAD,");
+        len = Wifi_SubDecStr(p, conStr, ',', WIFI_STR_DAT_BUF_SIZE);
+        if(len > 0)
+        {
            // dtuConID = a_atoi((const u8 *)conStr, (const u8)len, STD_LIB_FMT_DEC);
             //if(dtuConID == pOpRegs->dtuConID)
             {
@@ -478,8 +541,7 @@ BOOL Wifi_GetSocketReadInfo(char *str, WIFI_OPREGS *pOpRegs, u16 *pDatStart)
                     b = TRUE;
                 }
             }
-            
-       }
+        }
     }
     
     return b;
@@ -499,10 +561,9 @@ BOOL Wifi_GetSocketDownInfo(char *str, WIFI_OPREGS *pOpRegs)
     {
        p += strlen("cketDown,");
        len = Wifi_SubDecStr(p, conStr, ',', WIFI_STR_DAT_BUF_SIZE);
-       if(len > 0)
-       {
+        if(len > 0)
+        {
             //pOpRegs->dtuConID = a_atoi((const u8 *)conStr, (const u8)len, STD_LIB_FMT_DEC);
-           
             p += len + 1; 
             len = Wifi_SubDecStr(p, lenStr, ',', WIFI_STR_DAT_BUF_SIZE);
             if(len > 0)
@@ -510,7 +571,7 @@ BOOL Wifi_GetSocketDownInfo(char *str, WIFI_OPREGS *pOpRegs)
                 //pOpRegs->dtuRxLen = a_atoi((const u8 *)lenStr, (const u8)len, STD_LIB_FMT_DEC);
                 b = TRUE;
             }
-       }
+        }
     }
     
     if(b == FALSE)
@@ -577,7 +638,6 @@ BOOL Wifi_DelSocket(char *str)
             Wifi_WriteAtCmd(g_aWifiTmpBuf);
             
             b = TRUE;
-            
        }
     }
     
@@ -709,4 +769,26 @@ u8 Wifi_8To16(u8 len, u8 *pFrame, u16 *pBuffer)
     }
     
     return index;
+}
+
+void Wifi_StatusErr(WIFI_OPREGS *pOpRegs)
+{
+	u8 op = 0;
+
+	op = pOpRegs->op[pOpRegs->index];
+	switch (op)
+    {
+        case WIFI_CMD_AT_ATE:
+            g_nWifiStatus = WIFI_STATUS_AT_ERR_OR_NOSUPP;
+          break;
+        case WIFI_CMD_AT_SOCKET:
+            g_nWifiStatus = WIFI_STATUS_WIFI_CONNET_FAIL;
+          break;
+		case WIFI_CMD_AT_SKT_ENTTT:
+            g_nWifiStatus = WIFI_STATUS_SOCEKT_CONNET_FAIL;
+            break;
+		default:
+			break;
+    }
+    
 }

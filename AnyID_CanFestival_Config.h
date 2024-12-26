@@ -52,6 +52,10 @@
 #define INT_PRIORITY_PCD_IO             4   //15693�ķ��Ͷ�ʱ�����ȼ����?
 #define INT_PRIORITY_LOW                14
 
+
+#define INT_PRIORITY_FREERTOS_UART      7
+
+
 #define INT_PRIORITY_UART_DMA           8  //串口发送DMA
 
 

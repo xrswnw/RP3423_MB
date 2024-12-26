@@ -9,8 +9,8 @@
 #define STR_HEX_CR			            0x0D			//\r
 #define STR_HEX_LF			            0x0A			//\n
 
-#define WIFI_FEAME_RX_LEN               4096
-#define WIFI_FEAME_TX_LEN               512
+#define WIFI_FEAME_RX_LEN               UART_BUFFER_MAX_LEN
+#define WIFI_FEAME_TX_LEN               UART_BUFFER_MAX_LEN
 #define WIFI_RRAME_RX_MIN_LEN           4               //OK\R\N
    
 #define WIFI_BAUDRARE                   115200

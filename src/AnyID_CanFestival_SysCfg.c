@@ -89,6 +89,7 @@ void Sys_CfgPeriphClk(FunctionalState state)
                            RCC_APB1Periph_USART2 |
                            RCC_APB1Periph_UART4 |
                            RCC_APB1Periph_USART3 |
+                           RCC_APB1Periph_TIM4 |
                            RCC_APB1Periph_WWDG , state);
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_DMA2, state);
 }
@@ -148,8 +149,8 @@ void Sys_Init(void)
 		#endif
 	}
 
-    //Wifi_Init(WIFI_BAUDRARE);
-    
+    Wifi_Init(WIFI_BAUDRARE);
+    Wifi_Connect(&g_sWifiOpRegs, &g_sDeviceParams.wifiParams);
     Uart_Init(UART_BAUDRARE);
     
     Lan_Init(UART_BAUDRARE);
@@ -187,45 +188,18 @@ void Sys_LedTask(void)
 
 TaskHandle_t g_hDevice_CanRxDispatch = NULL;
 TaskHandle_t g_hDevice_CanTxDispatch = NULL;
+
 TaskHandle_t g_hDevice_UartRxDispatch = NULL;
 TaskHandle_t g_hDevice_UartTxDispatch = NULL;
+
 TaskHandle_t g_hDevice_MainDispatch = NULL;
 TaskHandle_t g_hDevice_HeartDispatch = NULL;
+TaskHandle_t g_hDevice_HLDispatch = NULL;
 
 
-#if FREE_RTOS_ENABLE_ERR_LOG
+#if configUSE_STATS_FORMATTING_FUNCTIONS
     TaskHandle_t g_hSys_RunTime = NULL;
-#endif
-void Sys_TaskCreat()
-{
-    portENTER_CRITICAL();
-    //Enter Ceitical
-
-    #if FREE_RTOS_ENABLE_ERR_LOG
-        Log_Init();
-    #endif
     
-    #if configUSE_STATS_FORMATTING_FUNCTIONS
-        xTaskCreate(Sys_RunTime, "Sys_RunTime", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, &g_hSys_RunTime);
-    #endif
-
-    xTaskCreate(Device_CanRxDispatch, "Device_CanRxDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_CanRxDispatch);
-    xTaskCreate(Device_CanTxDispatch, "Device_CanTxDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_CanTxDispatch);
-    
-    xTaskCreate(Device_UartRxDispatch, "Device_UartRxDispatch", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_UartRxDispatch);
-    xTaskCreate(Device_UartTxDispatch, "Device_UartTxDispatch", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_UartTxDispatch);
-    
-    xTaskCreate(Device_MainDispatch, "Device_MainDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_MainDispatch);
-    xTaskCreate(Device_HeartDispatch, "Device_HeartDispatch", configMINIMAL_STACK_SIZE / 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_HeartDispatch);
-    
-    vTaskDelete(NULL);
-    
-    //Exti Ceitical
-    portEXIT_CRITICAL();
-}
-
-
-#if FREE_RTOS_ENABLE_ERR_LOG
     //监控各个任务所占时间，调试使用
     //监控各个任务的堆栈使用情况，尽量保持再分配空间的2/3内，否则溢出会导致任务切换错误
     //按时间情况测试，如果队列毒死，可超时时间拉低，但需找到毒死具体原因，尽量减小开销
@@ -260,10 +234,17 @@ void Sys_TaskCreat()
                     pcTaskGetName(g_hDevice_UartTxDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_UartTxDispatch));
             
             sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
+                    pcTaskGetName(g_hWifi_NetInit), 4 * uxTaskGetStackHighWaterMark(g_hWifi_NetInit));
+            
+            sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
                     pcTaskGetName(g_hDevice_MainDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_MainDispatch));
             
             sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
                     pcTaskGetName(g_hDevice_HeartDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_HeartDispatch));
+            
+            sprintf(frame + strlen(frame), "%s : The free stack size is %d byte\r\n",  
+                    pcTaskGetName(g_hDevice_HLDispatch), 4 * uxTaskGetStackHighWaterMark(g_hDevice_HLDispatch));
+            
             
             Log_WriteBuffer((u8 *)frame, strlen(frame));
             
@@ -279,3 +260,35 @@ void Sys_TaskCreat()
         }
     }
 #endif
+
+void Sys_TaskCreat()
+{
+    portENTER_CRITICAL();
+    //Enter Ceitical
+
+    #if FREE_RTOS_ENABLE_ERR_LOG
+        Log_Init();
+    #endif
+    
+    #if configUSE_STATS_FORMATTING_FUNCTIONS
+        xTaskCreate(Sys_RunTime, "Sys_RunTime", configMINIMAL_STACK_SIZE * 2, NULL, tskIDLE_PRIORITY + 4, &g_hSys_RunTime);
+    #endif
+
+    if((xTaskCreate(Device_CanRxDispatch, "Device_CanRxDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_CanRxDispatch) == pdPASS) &&
+       (xTaskCreate(Device_CanTxDispatch, "Device_CanTxDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_CanTxDispatch) == pdPASS) &&
+       (xTaskCreate(Device_UartRxDispatch, "Device_UartRxDispatch", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_UartRxDispatch) == pdPASS) &&
+       (xTaskCreate(Device_UartTxDispatch, "Device_UartTxDispatch", configMINIMAL_STACK_SIZE * 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_UartTxDispatch) == pdPASS) &&
+       (xTaskCreate(Wifi_NetInit, "Wifi_NetInit", configMINIMAL_STACK_SIZE, (void *)&g_sDeviceParams.wifiParams, tskIDLE_PRIORITY + 1, &g_hWifi_NetInit) == pdPASS) &&
+       (xTaskCreate(Device_MainDispatch, "Device_MainDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_MainDispatch) == pdPASS) &&
+       (xTaskCreate(Device_HeartDispatch, "Device_HeartDispatch", configMINIMAL_STACK_SIZE / 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_HeartDispatch) == pdPASS) &&
+       (xTaskCreate(Device_HLDispatch, "Device_HLDispatch", configMINIMAL_STACK_SIZE / 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_HLDispatch) == pdPASS))
+    {
+        vTaskDelete(NULL);
+    }
+    else
+    {   
+        while(1);
+    }
+    //Exti Ceitical
+    portEXIT_CRITICAL();
+}

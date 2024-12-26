@@ -62,6 +62,30 @@ void Device_ResetDeviceParamenter()
     g_sDeviceParams.wokeParams.flag = DEVICE_WOKE_PARAMS_FLAG_NULL;
     g_sDeviceParams.wokeParams.netDissTime = DEVICE_WOKE_PARAMS_NETDISSTIME_100S;
     g_sDeviceParams.wokeParams.linitTime = DEVICE_WOKE_PARAMS_LINITTIME_DEFAULT;
+    
+    //---------------------------------------
+    g_sDeviceParams.wifiParams.enable = WIFI_ENABLE;
+    g_sDeviceParams.wifiParams.stationRegs.config = WIFI_STATION_CONFIG_TCPSERVER | WIFI_STATION_CONFIG_STICIP;
+    g_sDeviceParams.wifiParams.stationRegs.localIp[0] = 192;      g_sDeviceParams.wifiParams.stationRegs.localIp[1] = 168;              //默认ip,192.168.1.8, 子网掩码：255.255.255.0 网关：192.168.1.1
+    g_sDeviceParams.wifiParams.stationRegs.localIp[2] = 1;        g_sDeviceParams.wifiParams.stationRegs.localIp[3] = 8;
+    g_sDeviceParams.wifiParams.stationRegs.localPort = 502;
+
+    g_sDeviceParams.wifiParams.stationRegs.localMask[0] = 255;    g_sDeviceParams.wifiParams.stationRegs.localMask[1] = 255;
+    g_sDeviceParams.wifiParams.stationRegs.localMask[2] = 255;    g_sDeviceParams.wifiParams.stationRegs.localMask[3] = 0;
+    
+    g_sDeviceParams.wifiParams.stationRegs.localGateWay[0] = 192; g_sDeviceParams.wifiParams.stationRegs.localGateWay[1] = 168;
+    g_sDeviceParams.wifiParams.stationRegs.localGateWay[2] = 1;   g_sDeviceParams.wifiParams.stationRegs.localGateWay[3] = 1;
+    
+    g_sDeviceParams.wifiParams.stationRegs.remoteIp[0] = 192;     g_sDeviceParams.wifiParams.stationRegs.remoteIp[1] = 168;
+    g_sDeviceParams.wifiParams.stationRegs.remoteIp[2] = 1;       g_sDeviceParams.wifiParams.stationRegs.remoteIp[3] = 196;
+    g_sDeviceParams.wifiParams.stationRegs.remotePort = 10001;
+    
+    g_sDeviceParams.wifiParams.netRegs.rfu |= WIFI_LOG_ENABLE;
+    g_sDeviceParams.wifiParams.netRegs.config = WIFI_NET_CONFIG_STATION;
+    g_sDeviceParams.wifiParams.netRegs.ssidLen = strlen("anyid_5G");
+    memcpy(g_sDeviceParams.wifiParams.netRegs.ssid, "anyid_5G", strlen("anyid_5G"));
+    g_sDeviceParams.wifiParams.netRegs.pwdLen = strlen("anyid888");
+    memcpy(g_sDeviceParams.wifiParams.netRegs.pwd, "anyid888", strlen("anyid888"));
 }
 
 void Device_ReadDeviceParamenter(void)
@@ -99,7 +123,6 @@ void Device_ReadDeviceParamenter(void)
 
     if(b == FALSE && bBackup == FALSE)
     {
-		//参数如何恢复默认？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？？
 		Device_ResetDeviceParamenter();
         Device_WriteDeviceParamenter();
     }
@@ -193,7 +216,7 @@ u16 Reader_ProcessUartFrame(u8 *pFrame, UART_TXFRAME *txFrame)
     u8 *pParams = NULL;
 
     destAddr = *(u16 *)(pFrame + UART_FRAME_POS_DESTADDR);
-    if((destAddr != DEVICE_FRAME_BROADCAST_ADDR) && (destAddr != g_sDeviceParams.addr) )
+    if((destAddr != DEVICE_FRAME_BROADCAST_ADDR) && (destAddr != g_sDeviceParams.addr))
     {
         return 0;
     }
@@ -213,7 +236,7 @@ u16 Reader_ProcessUartFrame(u8 *pFrame, UART_TXFRAME *txFrame)
     }
     else
     {
-        paramsLen = pFrame[UART_FRAME_POS_LEN] + 3 - UART_FRAME_MIN_LEN;;
+        paramsLen = pFrame[UART_FRAME_POS_LEN] + 3 - UART_FRAME_MIN_LEN;
         pParams = pFrame + UART_FRAME_POS_PAR;
     }
     
@@ -226,11 +249,11 @@ u16 Reader_ProcessUartFrame(u8 *pFrame, UART_TXFRAME *txFrame)
                 txFrame->len = Device_ResponseFrame((u8 *)&DEVICE_VERSION, DEVICE_VERSION_SIZE, txFrame);
           }
         break;
-    case UART_COM_CMD_SUBDEVICE_DTU:
-         if((paramsLen <= (CAN_FRAME_MAX_LENTH + 1)) && (paramsLen >= (3)))
-          {
+        case UART_COM_CMD_SUBDEVICE_DTU:
+            if((paramsLen <= (CAN_FRAME_MAX_LENTH + 1)) && (paramsLen >= (3)))
+            {
                 CAN_FRAME canTxFrame = {0};
-
+                
                 if(*(pParams) == 0xFF)
                 {
                     canTxFrame.coBid = DEVICE_COM_BASE_BOAD_COBID;
@@ -256,8 +279,50 @@ u16 Reader_ProcessUartFrame(u8 *pFrame, UART_TXFRAME *txFrame)
                     g_sUartTxFrame.cmd = UART_COM_CMD_SUBDEVICE_DTU;
                     g_sUartTxFrame.destAddr = txFrame->destAddr;
                 }
-          }
-      break;
+            }
+        break;
+        case UART_COM_CMD_GET_RF_PEMACE_PARAMS:
+            if(paramsLen == 0)
+            {
+                txFrame->result = UART_COM_RESULT_NEED_RSP;
+                txFrame->len = Device_ResponseFrame((u8 *)&g_sDeviceParams.rfParams.pemace, sizeof(PEMACE_PERAMS), txFrame);
+            }
+        break;
+        case UART_COM_CMD_GET_RF_AMAR_PARAMS:
+            if(paramsLen == 0)
+            {
+                txFrame->result = UART_COM_RESULT_NEED_RSP;
+                txFrame->len = Device_ResponseFrame((u8 *)&g_sDeviceParams.rfParams.amar, sizeof(AMAR_PARAMS), txFrame);
+            }
+        break;
+        case UART_COM_CMD_GET_RF_AFI_PARAMS:
+            if(paramsLen == 0)
+            {
+                txFrame->result = UART_COM_RESULT_NEED_RSP;
+                txFrame->len = Device_ResponseFrame((u8 *)&g_sDeviceParams.rfParams.afi, sizeof(AFI_PARAMS), txFrame);
+            }
+        break;
+        case UART_COM_CMD_GET_RF_EAS_PARAMS:
+            if(paramsLen == 0)
+            {
+                txFrame->result = UART_COM_RESULT_NEED_RSP;
+                txFrame->len = Device_ResponseFrame((u8 *)&g_sDeviceParams.rfParams.eas, sizeof(EAS_PARAMS), txFrame);
+            }
+        break;
+        case UART_COM_CMD_GET_RF_INFRARED_PARAMS:
+            if(paramsLen == 0)
+            {
+                txFrame->result = UART_COM_RESULT_NEED_RSP;
+                txFrame->len = Device_ResponseFrame((u8 *)&g_sDeviceParams.rfParams.infraed, sizeof(INFRARED_PARAMS), txFrame);
+            }
+        break;
+        case UART_COM_CMD_GET_RF_LINK_PARAMS:
+            if(paramsLen == 0)
+            {
+                txFrame->result = UART_COM_RESULT_NEED_RSP;
+                txFrame->len = Device_ResponseFrame((u8 *)&g_sDeviceParams.rfParams.linkage, sizeof(LINKAGE_PARAMS), txFrame);
+            }
+        break;
         default:
             break;
     }
@@ -321,7 +386,6 @@ u8 Device_ProcessCobMTSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams)
                 result = DEVICE_CAN_FRAME_RESULT_RSP;
             }
         break;
-          break;
         default:
             //Device_RspFormatCanFrame(coBid, cmd, DEVICE_CAN_FRAME_RSP_NO_SUPP, NULL, NULL);
             //result = DEVICE_CAN_FRAME_RESULT_RSP;
@@ -382,7 +446,8 @@ u8 Device_ProcessCobMRSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams, CAN_FRAME
                 result = DEVICE_CAN_FRAME_RESULT_CHKOK;
             }
         }
-        case DEVICE_COM_CMD_OUTPUT_CTR :
+        break;
+        case DEVICE_COM_CMD_OUTPUT_CTR:
         if(paramsLen == DEVICE_CAN_FRAME_NOPARAMS_LEN)
         {
             if(addr == (txFrame->coBid & DEVICE_COB_ID_MASK_ADDR))
@@ -391,7 +456,7 @@ u8 Device_ProcessCobMRSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams, CAN_FRAME
             }
         }
         break;
-		case DEVICE_COM_CMD_ANT_CTR :
+		case DEVICE_COM_CMD_ANT_CTR:
         if(paramsLen == DEVICE_CAN_FRAME_NOPARAMS_LEN)
         {
             if(addr == (txFrame->coBid & DEVICE_COB_ID_MASK_ADDR))
@@ -460,7 +525,6 @@ u8 Device_ProcessCobSTSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams)
                 result = DEVICE_CAN_FRAME_RESULT_RSP;
             }
             break;
-            
 			case DEVICE_COM_CMD_RF_AMAR_INFO:
             if(paramsLen == 6)
             {   
@@ -611,6 +675,7 @@ void Device_CtrAnt(u8 addr, u8 antIndex)
     frame[pos++] = DEVICE_COM_CMD_ANT_CTR;
     frame[pos++] = DEVICE_CAN_FRAME_RFU;
     frame[pos++] = antIndex;
+
     Device_AddCanTxFrame(addr + DEVICE_COB_ID_MT_SDO, NULL, NULL, 3, frame);
 }
 
@@ -657,33 +722,33 @@ void Device_OpTask()
         {
             case DEVICE_SUBDEVICE_ANT_0:
 				pROp->antPort = DEVICE_SUBDEVICE_ANT_0;
-                Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0));
+				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0));
             break;
             case DEVICE_SUBDEVICE_ANT_1:
 				pROp->antPort = DEVICE_SUBDEVICE_ANT_1;
-              Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1));
+				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1));
             break;
             case DEVICE_SUBDEVICE_ANT_2:
 				pROp->antPort = DEVICE_SUBDEVICE_ANT_0 | DEVICE_SUBDEVICE_ANT_1;
-              Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0) | Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1));
+				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0) | Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1));
             break;
             case DEVICE_SUBDEVICE_ANT_3:
 				pROp->antPort = DEVICE_SUBDEVICE_ANT_2;
-              Device_CtrAnt(*(pROp->mxAddr + pROp->mxIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0));                     //先开启MX子端口
-              Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_2));                     //再开启RF母端口
+				Device_CtrAnt(*(pROp->mxAddr + pROp->mxIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0));                     //先开启MX子端口
+				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_2));                     //再开启RF母端口
             break;
             case DEVICE_SUBDEVICE_ANT_4:
 				pROp->antPort = DEVICE_SUBDEVICE_ANT_2;
-              Device_CtrAnt(*(pROp->mxAddr + pROp->mxIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1));
-              Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_2));
+				Device_CtrAnt(*(pROp->mxAddr + pROp->mxIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1));
+				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_2));
             break;
             case DEVICE_SUBDEVICE_ANT_5:
 				pROp->antPort = DEVICE_SUBDEVICE_ANT_2;
-              Device_CtrAnt(*(pROp->mxAddr + pROp->mxIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0) | Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1));
-              Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_2));
+				Device_CtrAnt(*(pROp->mxAddr + pROp->mxIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0) | Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1));
+				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_2));
             break;
             default:
-              pROp->state = DEVICE_RF_OP_STATE_IDLE;
+				pROp->state = DEVICE_RF_OP_STATE_IDLE;
             break;
         }
     }
@@ -744,7 +809,6 @@ void Device_OpTask()
     else if(pROp->state == DEVICE_RF_OP_STATE_GET_AMAR_DATA)
     {
         
-    
     }
 }
 
@@ -1015,6 +1079,14 @@ void Device_UartRxDispatch(void *p)
                         }
                     }
                 }
+                else
+                {
+                    xQueueReceive(g_hUartRxQueue, &uartRxFreme, portMAX_DELAY);                 //其它数据直接移除
+                }
+            }
+            else
+            {
+                xQueueReceive(g_hUartRxQueue, &uartRxFreme, portMAX_DELAY);                     //其它数据直接移除
             }
         }
         else
@@ -1040,6 +1112,10 @@ void Device_UartTxDispatch(void *p)
             {
                 Lan_EnableTxDma(uartTxFreme.buffer, uartTxFreme.len);
             }
+            else if(uartTxFreme.com == UART_COM_WIFI)
+            {
+                Wifi_WriteBuffer(uartTxFreme.buffer, uartTxFreme.len);
+            }
         }
         else
         {
@@ -1050,18 +1126,69 @@ void Device_UartTxDispatch(void *p)
 
 void Device_HLDispatch(void *p)
 {
+    const u32 hlChkTime = pdMS_TO_TICKS(500);
     while(1)
     {
         if(USART_GetFlagStatus(UART_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
         {
             USART_ITConfig(UART_PORT, USART_IT_RXNE, DISABLE);
             USART_ClearFlag(UART_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE);
-            vTaskDelay(10);
             Uart_DisableRxDma();
             
-            Uart_Init(UART_BAUDRARE);           //清除上电所创队列，否则栈空间一直压缩
+            vTaskDelay(10);
+            vQueueDelete(g_hUartComStatus);
+            vQueueDelete(g_hUartTxQueue);
+            vQueueDelete(g_hUartRxQueue);//清除上电所创队列，否则栈空间一直压缩
+            Uart_Init(UART_BAUDRARE);           
         }
+        
+        if(CAN_GetFlagStatus(CAN_HARDPORT, CAN_FLAG_BOF | CAN_FLAG_EWG | CAN_FLAG_EPV))
+        {  /* 
+            CAN_ClearFlag(CAN_HARDPORT, CAN_FLAG_BOF | CAN_FLAG_EWG | CAN_FLAG_EPV);
+            
+            vTaskDelay(10);
+            vQueueDelete(g_hCanRxQueue);
+            vQueueDelete(g_hCanTxQueue);
+            vQueueDelete(g_hCanComStatus);//清除上电所创队列，否则栈空间一直压缩
+            Can_InitInterface(CAN_PSC_BUD_500K);		//can硬件层复位		
+            */		
+        }
+        
+        if(USART_GetFlagStatus(LAN_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
+        {
+            USART_ITConfig(LAN_PORT, USART_IT_RXNE, DISABLE);
+            USART_ClearFlag(LAN_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE);
+            Lan_DisableRxDma();
+
+            vTaskDelay(10);
+            Lan_Init(LAN_BAUDRARE);           
+        }
+        
+        if(USART_GetFlagStatus(WIFI_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
+        {
+            USART_ITConfig(WIFI_PORT, USART_IT_RXNE, DISABLE);
+            USART_ClearFlag(WIFI_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE); 
+            Uart_ResetFrame(g_sWifiRxFrame);
+            
+            vTaskDelay(10);
+            Wifi_Init(WIFI_BAUDRARE);
+            vTaskResume(g_hWifi_NetInit);
+            Wifi_Connect(&g_sWifiOpRegs, &g_sDeviceParams.wifiParams);
+        }
+
+        vTaskDelay(hlChkTime);
+    }
+}
+
+
+void Device_LedDispatch()
+{
+    //u32 wifiStatusTime = 0;
+    const u32 ledChkTime = pdMS_TO_TICKS(100);
+    while(1)
+    {
     
     
+        vTaskDelay(ledChkTime);
     }
 }

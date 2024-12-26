@@ -57,8 +57,8 @@ void Lan_ConfigInt(void)
 
     NVIC_InitStructure.NVIC_IRQChannel = LAN_INT_CHANNEL;
 
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 7;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 7;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = INT_PRIORITY_FREERTOS_UART;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = INT_PRIORITY_FREERTOS_UART;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
     NVIC_Init(&NVIC_InitStructure);
@@ -145,8 +145,8 @@ void Lan_InitTxDma(u8 *pTxBuffer, u32 len)
     //dma interrupt
     NVIC_InitStructure.NVIC_IRQChannel = LAN_TXDMA_INT;    //
 
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 7;    //
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 7;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = INT_PRIORITY_FREERTOS_UART;    //
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = INT_PRIORITY_FREERTOS_UART;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
     NVIC_Init(&NVIC_InitStructure);
@@ -189,8 +189,8 @@ void Lan_InitRxDma(u8 *pRxBuffer, u32 len)
     //dma interrupt
     NVIC_InitStructure.NVIC_IRQChannel = LAN_RXDMA_INT;   
 
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 7;    //
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 7;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = INT_PRIORITY_FREERTOS_UART;    //
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = INT_PRIORITY_FREERTOS_UART;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
     NVIC_Init(&NVIC_InitStructure);

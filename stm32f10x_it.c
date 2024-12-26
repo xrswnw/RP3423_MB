@@ -314,23 +314,6 @@ void Lan_IRQHandler(void)
 }
 //WIFI
 
-/*
-void Wifi_IRQHandler(void)
-{
-    if(WIFI_PORT->SR & LAN_SR_IDLE)
-    {    
-        Wifi_DisableRxDma();
-        g_sWifiRxFrame.length = Wifi_GetRxLen();
-        g_sWifiRxFrame.com = UART_COM_LAN;
-        
-        Wifi_EnableRxDma();
-    }
-
-    g_nWifiSr = WIFI_PORT->SR;                                       //通过读取SR和DR清空中断标志
-    g_nWifiDr = WIFI_PORT->DR;    
-}*/
-
-
 void Wifi_IRQHandler(void)
 {
     if(USART_GetITStatus(WIFI_PORT, USART_IT_RXNE) != RESET)
@@ -348,6 +331,7 @@ void Wifi_IRQHandler(void)
         {
             Wifi_ResetTimCnt();
         }
+        Wifi_RcvQueue(g_hUartRxQueue);
     }
     else if(USART_GetITStatus(WIFI_PORT, USART_IT_ORE) != RESET)
     {
@@ -364,5 +348,6 @@ void TIM4_IRQHandler(void)
 
         Wifi_StopRcvTim();
         g_sWifiRxFrame.state = UART_STAT_TO;
+        Wifi_RcvQueue(g_hUartRxQueue);
     }
 }
