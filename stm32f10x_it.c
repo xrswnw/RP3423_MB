@@ -172,7 +172,7 @@ void TIM2_IRQHandler()
     if(TIM_GetITStatus(TIM2,TIM_IT_Update) == SET) //溢出中断
 	{
 		FreeRTOSRunTimeTicks++;
-        g_nSysTick = (FreeRTOSRunTimeTicks / 1000);                 //  1mstick
+        g_nSysTick = (FreeRTOSRunTimeTicks / 100);                 //  1mstick
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);  //清除中断标志位
 	}
 }
@@ -203,10 +203,17 @@ void Log_IRQHandler(void)
     g_nLogDr = LOG_PORT->DR;    
 }
 
-CanRxMsg g_sCanRcvInfo = {0};
+
 void CAN_IRQHandler(void)
 {
-	// 没有接收到数据,直接退出 
+	// 没有接收到数据,直接退出 CAN_IT_ERR
+  
+    if(SET == CAN_GetITStatus(CAN_HARDPORT, CAN_IT_ERR))//出错中断挂号 
+    {
+        CAN_ClearITPendingBit(CAN_HARDPORT, CAN_IT_ERR);
+        //此处可重新初始化硬件层
+    }
+
 	if(CAN_MessagePending(CAN_HARDPORT, CAN_FIFO0))
 	{
         CanRxMsg canRxFrame = {0};

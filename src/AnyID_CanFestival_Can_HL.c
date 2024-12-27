@@ -31,7 +31,7 @@ BOOL Can_InitInterface(u8 psc)
 	CAN_InitStructure.CAN_SJW = CAN_SJW_2tq;
 	CAN_InitStructure.CAN_Prescaler = psc;
 	CAN_InitStructure.CAN_Mode = CAN_Mode_Normal;
-	CAN_InitStructure.CAN_ABOM = DISABLE;   								// 软件自动离线管理
+	CAN_InitStructure.CAN_ABOM = ENABLE;   								        // 硬件层自动复位
 	CAN_InitStructure.CAN_AWUM = DISABLE;   								// 睡眠模式通过软件唤醒(清除CAN->MCR的SLEEP位)
 	CAN_InitStructure.CAN_NART = DISABLE;   								    // 使用报文自动传送 
 	CAN_InitStructure.CAN_RFLM = DISABLE;   								// 报文不锁定,新的覆盖旧的 

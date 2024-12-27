@@ -137,7 +137,7 @@ void Sys_Init(void)
     
 	FRam_InitInterface();
 	Device_ReadDeviceParamenter();
-
+    Periph_InitInterface();
     while(Can_InitInterface(CAN_PSC_BUD_500K))
 	{			
         Periph_Ledon(1);
@@ -162,7 +162,7 @@ void Sys_Init(void)
     
     }
         
-    Periph_InitInterface();
+    
     
 	Device_Init();
     

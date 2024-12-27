@@ -416,6 +416,11 @@ u8 Device_ProcessCobMRSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams, CAN_FRAME
                     pSubInfo->status = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + 1);
                     pSubInfo->heartTime = g_nSysTick;
                 }
+                else
+                {//如果回复心跳的设备不在我的设备列表中，则设备不支持，或者上电报文接收失败（概率低，同时从机可做校验指示），可另其复位（非我设备不予理睬？？？）
+                
+                
+                }
             }
         }
         break;
@@ -1123,10 +1128,18 @@ void Device_UartTxDispatch(void *p)
         }
     }
 }
+//00100101
 
+#define Device_CanEsrRegUp(can) do{\
+                                    canRxErr = (can->ESR & 0xFF000000) >> 24;\
+                                    canTxErr = (can->ESR & 0x00FF0000) >> 16;\
+                                    canLec = (can->ESR & 0x0000FF00) >> 8;\
+                                    canErr = (can->ESR & 0x000000FF) >> 0;\
+                                    }while(0)
 void Device_HLDispatch(void *p)
 {
     const u32 hlChkTime = pdMS_TO_TICKS(500);
+    static u8 canTxErr = 0, canRxErr = 0, canLec = 0, canErr = 0;
     while(1)
     {
         if(USART_GetFlagStatus(UART_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
@@ -1143,15 +1156,17 @@ void Device_HLDispatch(void *p)
         }
         
         if(CAN_GetFlagStatus(CAN_HARDPORT, CAN_FLAG_BOF | CAN_FLAG_EWG | CAN_FLAG_EPV))
-        {  /* 
-            CAN_ClearFlag(CAN_HARDPORT, CAN_FLAG_BOF | CAN_FLAG_EWG | CAN_FLAG_EPV);
-            
-            vTaskDelay(10);
-            vQueueDelete(g_hCanRxQueue);
-            vQueueDelete(g_hCanTxQueue);
-            vQueueDelete(g_hCanComStatus);//清除上电所创队列，否则栈空间一直压缩
-            Can_InitInterface(CAN_PSC_BUD_500K);		//can硬件层复位		
-            */		
+        {  
+            Device_CanEsrRegUp(CAN_HARDPORT);
+            if(CAN_GetFlagStatus(CAN_HARDPORT, CAN_FLAG_BOF))           
+            {//开启硬件自动复位，正常情况下不会进入此
+                CAN_ClearFlag(CAN_HARDPORT, CAN_FLAG_EWG | CAN_FLAG_EPV | CAN_FLAG_BOF);
+                vTaskDelay(10);
+                vQueueDelete(g_hCanRxQueue);
+                vQueueDelete(g_hCanTxQueue);
+                vQueueDelete(g_hCanComStatus);//清除上电所创队列，否则栈空间一直压缩
+                Can_InitInterface(CAN_PSC_BUD_500K);		//can硬件层复位		
+            }
         }
         
         if(USART_GetFlagStatus(LAN_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
