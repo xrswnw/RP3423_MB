@@ -39,4 +39,31 @@ void Rtc_ConfigAlarmInt(FunctionalState state);
 extern const u32 g_nRtcDayPerMonthLeapYear[12];
 extern const u32 g_nRtcDayPerMonthNormalYear[12];
 
+
+
+typedef struct rtcRealTime{
+  int year; 
+  int month;  
+  int day;  
+  int hour; 
+  int minute;  
+  int second;
+}RTC_REALTIME ;
+ 
+#define RTC_REAL_TIME_UNIX_BASE_YEAR                    1970
+
+#define RTC_REAL_TIME_MINUTE_HAVE_SCEOND                60
+#define RTC_REAL_TIME_HOUR_HAVE_MINUTE                  60
+#define RTC_REAL_TIME_DAY_HAVE_HOUR                     24
+#define RTC_REAL_TIME_YEAR_HAVE_DAY                     365
+
+#define RTC_REAL_TIME_VALUE_SCEOND_COUNT              1
+#define RTC_REAL_TIME_VALUE_MINUTE_COUNT              RTC_REAL_TIME_VALUE_SCEOND * RTC_REAL_TIME_MINUTE_HAVE_SCEOND
+#define RTC_REAL_TIME_VALUE_HOUR_COUNT                RTC_REAL_TIME_VALUE_MINUTE * RTC_REAL_TIME_HOUR_HAVE_MINUTE
+#define RTC_REAL_TIME_VALUE_DAY_COUNT                 RTC_REAL_TIME_VALUE_HOUR * RTC_REAL_TIME_DAY_HAVE_HOUR
+#define RTC_REAL_TIME_VALUE_YRAR_COUNT                RTC_REAL_TIME_VALUE_HOUR * RTC_REAL_TIME_YEAR_HAVE_DAY
+
+extern u32 g_nRtcUnixStamp;
+extern RTC_REALTIME g_nRtcRealTime;
+void Rtc_UnixStampToRealTime(u32 stamp, RTC_REALTIME *realTime);
 #endif

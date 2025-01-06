@@ -174,6 +174,12 @@ void TIM2_IRQHandler()
 		FreeRTOSRunTimeTicks++;
         g_nSysTick = (FreeRTOSRunTimeTicks / 100);                 //  1mstick
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);  //清除中断标志位
+        /*
+        if((FreeRTOSRunTimeTicks % ((200 * 100) + 1)) == 0)
+        {
+            a_SetStateBit(g_nDeviceState, DEVICE_LED_STATUS_SYS_RUN);
+        }
+        */
 	}
 }
 
@@ -358,3 +364,6 @@ void TIM4_IRQHandler(void)
         Wifi_RcvQueue(g_hUartRxQueue);
     }
 }
+
+
+

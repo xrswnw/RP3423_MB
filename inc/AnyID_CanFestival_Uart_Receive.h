@@ -103,6 +103,8 @@ extern UART_TXFRAME g_sUartTxFrame;
 #define UART_COM_CMD_GET_RF_INFRARED_PARAMS                 0x24
 #define UART_COM_CMD_GET_RF_LINK_PARAMS                     0x25
 
+#define UART_COM_CMD_GET_UNIX_SATMP                         0xF0
+#define UART_COM_CMD_SET_UNIX_SATMP                         0xF1
 #define UART_COM_CMD_GET_VERSION                            0xF7
 #define UART_COM_CMD_SUBDEVICE_DTU                          0xFE
 

@@ -1250,6 +1250,9 @@
             <name>$PROJ_DIR$\..\src\AnyID_CanFestival_Periph_HL.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\src\AnyID_CanFestival_RTC.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\src\AnyID_CanFestival_SysCfg.c</name>
         </file>
         <file>

@@ -54,18 +54,26 @@
         <ITMlogFile>$PROJ_DIR$\ITM.log</ITMlogFile>
     </SWOTraceHWSettings>
     <DebugChecksum>
-        <Checksum>1351985523</Checksum>
+        <Checksum>151989117</Checksum>
     </DebugChecksum>
     <struct_types>
         <Fmt0>CAN_TypeDef-BTR	4	0</Fmt0>
         <Fmt1>CAN_TypeDef-ESR	4	0</Fmt1>
         <Fmt2>CAN_TypeDef-IER	4	0</Fmt2>
         <Fmt3>DEVICE_INFO-heartTime	3	0</Fmt3>
+        <Fmt4>MiniListItem_t-xItemValue	4	0</Fmt4>
+        <Fmt5>_xtime-day	3	0</Fmt5>
+        <Fmt6>_xtime-month	3	0</Fmt6>
+        <Fmt7>struct xLIST_ITEM-xItemValue	4	0</Fmt7>
     </struct_types>
+    <array_types>
+        <Fmt0>u8[4]	3	0</Fmt0>
+    </array_types>
     <watch_formats>
         <Fmt0>{W}1:canEsr	4	0</Fmt0>
         <Fmt1>{W}42:FreeRTOSRunTimeTicks	3	0</Fmt1>
         <Fmt2>{W}42:xFreeBytesRemaining	3	0</Fmt2>
+        <Fmt3>{W}42:xNextTaskUnblockTime	4	0</Fmt3>
     </watch_formats>
     <Trace2>
         <Enabled>0</Enabled>
@@ -121,6 +129,29 @@
         <ShowTimeSum>1</ShowTimeSum>
         <SumSortOrder>0</SumSortOrder>
     </EventLog>
+    <DisassembleMode>
+        <mode>0</mode>
+    </DisassembleMode>
+    <Breakpoints2>
+        <Bp0>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.0.1" 0 0 1 "" 0 "" 0</Bp0>
+        <Bp1>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.0.1" 0 0 1 "" 0 "" 0</Bp1>
+        <Bp2>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_SysCfg.c}.290.9" 0 0 1 "" 0 "" 0</Bp2>
+        <Bp3>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.779.17" 0 0 1 "" 0 "" 0</Bp3>
+        <Bp4>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.758.9" 0 0 1 "" 0 "" 0</Bp4>
+        <Bp5>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.754.9" 0 0 1 "" 0 "" 0</Bp5>
+        <Bp6>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_RTC.c}.0.1" 0 0 1 "" 0 "" 0</Bp6>
+        <Bp7>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.0.1" 0 0 1 "" 0 "" 0</Bp7>
+        <Bp8>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.0.1" 0 0 1 "" 0 "" 0</Bp8>
+        <Bp9>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.461.9" 0 0 1 "" 0 "" 0</Bp9>
+        <Bp10>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.479.9" 0 0 1 "" 0 "" 0</Bp10>
+        <Bp11>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1208.17" 0 0 1 "" 0 "" 0</Bp11>
+        <Bp12>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\main.c}.14.5" 0 0 1 "" 0 "" 0</Bp12>
+        <Bp13>_ 0 "EMUL_CODE" "0x080024CC" 0 0 1 "" 0 "" 0</Bp13>
+        <Bp14>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\kernel\src\tasks.c}.2765.21" 0 0 1 "" 0 "" 0</Bp14>
+        <Bp15>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\kernel\src\tasks.c}.4007.9" 0 0 1 "" 0 "" 0</Bp15>
+        <Bp16>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\kernel\src\tasks.c}.5366.25" 0 0 1 "" 0 "" 0</Bp16>
+        <Count>17</Count>
+    </Breakpoints2>
     <TermIOLog>
         <LoggingEnabled>_ 0</LoggingEnabled>
         <LogFile>_ ""</LogFile>
@@ -130,6 +161,11 @@
         <LogFile>_ ""</LogFile>
         <Category>_ 0</Category>
     </LogFile>
+    <Aliases>
+        <A0>_ "E:\AnyID\Git\RP3423_MB\stm32f10x_it.c" ""</A0>
+        <Count>1</Count>
+        <SuppressDialog>0</SuppressDialog>
+    </Aliases>
     <DriverProfiling>
         <Enabled>0</Enabled>
         <Mode>1</Mode>
@@ -147,23 +183,4 @@
         <Probe0>I0</Probe0>
         <ProbeSetup0>2 1 1 2 0 0</ProbeSetup0>
     </PowerProbe>
-    <DisassembleMode>
-        <mode>0</mode>
-    </DisassembleMode>
-    <Breakpoints2>
-        <Bp0>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.0.1" 0 0 1 "" 0 "" 0</Bp0>
-        <Bp1>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.0.1" 0 0 1 "" 0 "" 0</Bp1>
-        <Bp2>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_SysCfg.c}.290.9" 0 0 1 "" 0 "" 0</Bp2>
-        <Bp3>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.213.9" 0 0 1 "" 0 "" 0</Bp3>
-        <Bp4>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1142.13" 0 0 1 "" 0 "" 0</Bp4>
-        <Bp5>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1158.17" 0 0 1 "" 0 "" 0</Bp5>
-        <Bp6>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1169.13" 0 0 1 "" 0 "" 0</Bp6>
-        <Bp7>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1179.13" 0 0 1 "" 0 "" 0</Bp7>
-        <Count>8</Count>
-    </Breakpoints2>
-    <Aliases>
-        <A0>_ "E:\AnyID\Git\RP3423_MB\stm32f10x_it.c" ""</A0>
-        <Count>1</Count>
-        <SuppressDialog>0</SuppressDialog>
-    </Aliases>
 </settings>

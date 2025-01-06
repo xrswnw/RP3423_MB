@@ -47,6 +47,15 @@ extern const PORT_INF PERIPH_LED_6_PORT;
 #define PERIPH_LEDINDEX5            4
 #define PERIPH_LEDINDEX6            5
 
+
+#define PERIPH_LED_RF_LOSS          0
+#define PERIPH_LED_INFRA1_LOSS      1
+#define PERIPH_LED_INFRA2_LOSS      2
+
+#define PERIPH_LED_SYS_RUN          4
+
+#define PERIPH_LED_WIFI_STATUS      5
+
 extern u8 g_nPeriphLedStatus;
 extern const PORT_INF PERIPH_LED[PERIPH_LED_NUM];
 #define Periph_Ledon(index)         do{PERIPH_LED[index].Port->BSRR = PERIPH_LED[index].Pin; g_nPeriphLedStatus |= (1 << index);}while(0)

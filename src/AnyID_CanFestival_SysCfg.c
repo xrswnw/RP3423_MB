@@ -135,6 +135,7 @@ void Sys_Init(void)
     Sys_CtrlIOInit();
 	RCC_ClocksTypeDef g_sSysclockFrep; RCC_GetClocksFreq(&g_sSysclockFrep);    //查看时钟频率
     
+    //RTC_Init();
 	FRam_InitInterface();
 	Device_ReadDeviceParamenter();
     Periph_InitInterface();
@@ -161,9 +162,6 @@ void Sys_Init(void)
     
     
     }
-        
-    
-    
 	Device_Init();
     
 	#if SYS_ENABLE_WDT
@@ -195,6 +193,7 @@ TaskHandle_t g_hDevice_UartTxDispatch = NULL;
 TaskHandle_t g_hDevice_MainDispatch = NULL;
 TaskHandle_t g_hDevice_HeartDispatch = NULL;
 TaskHandle_t g_hDevice_HLDispatch = NULL;
+TaskHandle_t g_hDevice_DeviceLedDispatch = NULL;
 
 
 #if configUSE_STATS_FORMATTING_FUNCTIONS
@@ -281,7 +280,8 @@ void Sys_TaskCreat()
        (xTaskCreate(Wifi_NetInit, "Wifi_NetInit", configMINIMAL_STACK_SIZE, (void *)&g_sDeviceParams.wifiParams, tskIDLE_PRIORITY + 1, &g_hWifi_NetInit) == pdPASS) &&
        (xTaskCreate(Device_MainDispatch, "Device_MainDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_MainDispatch) == pdPASS) &&
        (xTaskCreate(Device_HeartDispatch, "Device_HeartDispatch", configMINIMAL_STACK_SIZE / 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_HeartDispatch) == pdPASS) &&
-       (xTaskCreate(Device_HLDispatch, "Device_HLDispatch", configMINIMAL_STACK_SIZE / 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_HLDispatch) == pdPASS))
+        (xTaskCreate(Device_LedDispatch, "Device_LedDispatch", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_HeartDispatch) == pdPASS) &&
+       (xTaskCreate(Device_HLDispatch, "Device_HLDispatch", configMINIMAL_STACK_SIZE / 4, NULL, tskIDLE_PRIORITY + 1, &g_hDevice_DeviceLedDispatch) == pdPASS))
     {
         vTaskDelete(NULL);
     }

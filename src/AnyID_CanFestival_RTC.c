@@ -1,7 +1,8 @@
 #include "AnyID_CanFestival_RTC.h"
 
 RTC_TIME g_sRtcTime = {0, 1, 1, 0, 0, 0};
-
+u32 g_nRtcUnixStamp = 0;
+RTC_REALTIME g_nRtcRealTime = {0};
 void RTC_Init(void)
 {
     // Allow access to BKP Domain
@@ -259,14 +260,84 @@ void RTC_FormatTime(u32 count)
 
 void Rtc_ConfigAlarmInt(FunctionalState state)
 {
-    NVIC_InitTypeDef NVIC_InitStructure;
-
+    NVIC_InitTypeDef NVIC_InitStructure = {0};
 
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); 
     NVIC_InitStructure.NVIC_IRQChannel = RTC_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = INT_PRIORITY_FREERTOS_UART;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = INT_PRIORITY_FREERTOS_UART;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
-
 }
+
+
+static unsigned int g_nRtcMonth[12]={
+        /*01月*/31, 
+        /*02月*/28, 
+        /*03月*/31, 
+        /*04月*/30, 
+        /*05月*/31, 
+        /*06月*/30, 
+        /*07月*/31, 
+        /*08月*/31, 
+        /*09月*/30, 
+        /*10月*/31, 
+        /*11月*/30, 
+        /*12月*/31 };
+
+//UNIX转为UTC 已进行时区转换 北京时间UTC+8
+void Rtc_UnixStampToRealTime(u32 stamp, RTC_REALTIME *realTime)
+{
+    u32 days = 0, leapYearCount = 0; 
+
+    realTime->second = stamp % RTC_REAL_TIME_MINUTE_HAVE_SCEOND;                    //获得秒 
+    stamp /= RTC_REAL_TIME_MINUTE_HAVE_SCEOND; 
+    
+    realTime->minute = stamp % RTC_REAL_TIME_HOUR_HAVE_MINUTE;                      //获得分 
+    stamp += 8 * RTC_REAL_TIME_HOUR_HAVE_MINUTE ;                                   //时区矫正 转为UTC+8 bylzs
+    stamp /= RTC_REAL_TIME_HOUR_HAVE_MINUTE; 
+    
+    realTime->hour = stamp % RTC_REAL_TIME_DAY_HAVE_HOUR;                            //获得时 
+    days = stamp / RTC_REAL_TIME_DAY_HAVE_HOUR;                                  //获得总天数 
+    
+    leapYearCount = (days + RTC_REAL_TIME_YEAR_HAVE_DAY) / 1461;                //过去了多少个闰年(4年一闰) 
+    
+    if(((days + RTC_REAL_TIME_YEAR_HAVE_DAY) % 1461) == 0) 
+    {//闰年的最后1天 
+        realTime->year = RTC_REAL_TIME_UNIX_BASE_YEAR + (days / 366);               //获得年 
+        realTime->month = 12;                                                       //调整月 
+        realTime->day = 31;
+        return; 
+    } 
+    
+    days -= leapYearCount; 
+    realTime->year = 1970 + (days / RTC_REAL_TIME_YEAR_HAVE_DAY);                   //获得年 
+    days %= RTC_REAL_TIME_YEAR_HAVE_DAY;                                            //今年的第几天 
+    days = 01 + days;                                                               //1日开始 
+    
+    if((realTime->year % 4) == 0) 
+    { 
+        if(days > 60)
+        {
+            --days;
+        }                                                                           //闰年调整 
+        else 
+        { 
+            if(days == 60) 
+            { 
+                realTime->month = 2; 
+                realTime->day = 29; 
+                return; 
+            } 
+        } 
+    } 
+    
+    for(realTime->month = 0; g_nRtcMonth[realTime->month] < days; realTime->month++) 
+    { 
+        days -= g_nRtcMonth[realTime->month]; 
+    } 
+    
+    ++realTime->month;                                                              //调整月 
+    realTime->day = days;                                                           //获得日 
+}
+

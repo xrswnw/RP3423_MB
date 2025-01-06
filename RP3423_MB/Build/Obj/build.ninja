@@ -65,6 +65,7 @@ build AnyID_CanFestival_FRam_HL.pbi : index AnyID_CanFestival_FRam_HL.xcl
 build AnyID_CanFestival_Lan.pbi : index AnyID_CanFestival_Lan.xcl
 build AnyID_CanFestival_Lan_HL.pbi : index AnyID_CanFestival_Lan_HL.xcl
 build AnyID_CanFestival_Periph_HL.pbi : index AnyID_CanFestival_Periph_HL.xcl
+build AnyID_CanFestival_RTC.pbi : index AnyID_CanFestival_RTC.xcl
 build AnyID_CanFestival_SysCfg.pbi : index AnyID_CanFestival_SysCfg.xcl
 build AnyID_CanFestival_Tim_HL.pbi : index AnyID_CanFestival_Tim_HL.xcl
 build AnyID_CanFestival_Uart.pbi : index AnyID_CanFestival_Uart.xcl
@@ -76,14 +77,14 @@ build AnyID_CanFestival_Wifi_HL.pbi : index AnyID_CanFestival_Wifi_HL.xcl
 build AnyID_FRam.pbi : index AnyID_FRam.xcl
 build AnyID_Stdlib.pbi : index AnyID_Stdlib.xcl
 build Rtos_HL.pbi : index Rtos_HL.xcl
-build RP3423_MB_part0.pbi : link system_stm32f10x.pbi port.pbi heap_4.pbi croutine.pbi event_groups.pbi list.pbi queue.pbi
-build RP3423_MB_part1.pbi : link stream_buffer.pbi tasks.pbi timers.pbi main.pbi stm32f10x_it.pbi misc.pbi stm32f10x_adc.pbi
-build RP3423_MB_part2.pbi : link stm32f10x_bkp.pbi stm32f10x_can.pbi stm32f10x_cec.pbi stm32f10x_crc.pbi stm32f10x_dac.pbi stm32f10x_dbgmcu.pbi stm32f10x_dma.pbi
-build RP3423_MB_part3.pbi : link stm32f10x_exti.pbi stm32f10x_flash.pbi stm32f10x_fsmc.pbi stm32f10x_gpio.pbi stm32f10x_i2c.pbi stm32f10x_iwdg.pbi stm32f10x_pwr.pbi
-build RP3423_MB_part4.pbi : link stm32f10x_rcc.pbi stm32f10x_rtc.pbi stm32f10x_sdio.pbi stm32f10x_spi.pbi stm32f10x_tim.pbi stm32f10x_usart.pbi stm32f10x_wwdg.pbi
-build RP3423_MB_part5.pbi : link AnyID_CanFestival_Can_HL.pbi AnyID_CanFestival_Device.pbi AnyID_CanFestival_Flash.pbi AnyID_CanFestival_Flash_HL.pbi AnyID_CanFestival_FlashM25.pbi AnyID_CanFestival_FRam.pbi AnyID_CanFestival_FRam_HL.pbi
-build RP3423_MB_part6.pbi : link AnyID_CanFestival_Lan.pbi AnyID_CanFestival_Lan_HL.pbi AnyID_CanFestival_Periph_HL.pbi AnyID_CanFestival_SysCfg.pbi AnyID_CanFestival_Tim_HL.pbi AnyID_CanFestival_Uart.pbi AnyID_CanFestival_Uart_HL.pbi
-build RP3423_MB_part7.pbi : link AnyID_CanFestival_Uart_Receive.pbi AnyID_CanFestival_WDG_HL.pbi AnyID_CanFestival_Wifi.pbi AnyID_CanFestival_Wifi_HL.pbi AnyID_FRam.pbi AnyID_Stdlib.pbi Rtos_HL.pbi
+build RP3423_MB_part0.pbi : link system_stm32f10x.pbi port.pbi heap_4.pbi croutine.pbi event_groups.pbi list.pbi queue.pbi stream_buffer.pbi
+build RP3423_MB_part1.pbi : link tasks.pbi timers.pbi main.pbi stm32f10x_it.pbi misc.pbi stm32f10x_adc.pbi stm32f10x_bkp.pbi stm32f10x_can.pbi
+build RP3423_MB_part2.pbi : link stm32f10x_cec.pbi stm32f10x_crc.pbi stm32f10x_dac.pbi stm32f10x_dbgmcu.pbi stm32f10x_dma.pbi stm32f10x_exti.pbi stm32f10x_flash.pbi stm32f10x_fsmc.pbi
+build RP3423_MB_part3.pbi : link stm32f10x_gpio.pbi stm32f10x_i2c.pbi stm32f10x_iwdg.pbi stm32f10x_pwr.pbi stm32f10x_rcc.pbi stm32f10x_rtc.pbi stm32f10x_sdio.pbi stm32f10x_spi.pbi
+build RP3423_MB_part4.pbi : link stm32f10x_tim.pbi stm32f10x_usart.pbi stm32f10x_wwdg.pbi AnyID_CanFestival_Can_HL.pbi AnyID_CanFestival_Device.pbi AnyID_CanFestival_Flash.pbi AnyID_CanFestival_Flash_HL.pbi AnyID_CanFestival_FlashM25.pbi
+build RP3423_MB_part5.pbi : link AnyID_CanFestival_FRam.pbi AnyID_CanFestival_FRam_HL.pbi AnyID_CanFestival_Lan.pbi AnyID_CanFestival_Lan_HL.pbi AnyID_CanFestival_Periph_HL.pbi AnyID_CanFestival_RTC.pbi AnyID_CanFestival_SysCfg.pbi AnyID_CanFestival_Tim_HL.pbi
+build RP3423_MB_part6.pbi : link AnyID_CanFestival_Uart.pbi AnyID_CanFestival_Uart_HL.pbi AnyID_CanFestival_Uart_Receive.pbi AnyID_CanFestival_WDG_HL.pbi AnyID_CanFestival_Wifi.pbi AnyID_CanFestival_Wifi_HL.pbi AnyID_FRam.pbi AnyID_Stdlib.pbi
+build RP3423_MB_part7.pbi : link Rtos_HL.pbi
 build RP3423_MB.pbd : link RP3423_MB_part0.pbi RP3423_MB_part1.pbi RP3423_MB_part2.pbi RP3423_MB_part3.pbi RP3423_MB_part4.pbi RP3423_MB_part5.pbi RP3423_MB_part6.pbi RP3423_MB_part7.pbi
 build RP3423_MB.pbw : browsedata RP3423_MB.pbd
 

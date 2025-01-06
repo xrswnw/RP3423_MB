@@ -26,7 +26,9 @@ stm32f10x_bkp.pbi: \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\StdLib\inc\stm32f10x_flash.h \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\StdLib\inc\stm32f10x_gpio.h \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\StdLib\inc\stm32f10x_iwdg.h \
+  E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\StdLib\inc\stm32f10x_pwr.h \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\StdLib\inc\stm32f10x_rcc.h \
+  E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\StdLib\inc\stm32f10x_rtc.h \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\StdLib\inc\stm32f10x_spi.h \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\StdLib\inc\stm32f10x_tim.h \
   E:\AnyID\Git\RP3423_MB\RP3423_MB\RP3423_MB\..\StdLib\inc\stm32f10x_usart.h \

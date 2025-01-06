@@ -5361,6 +5361,10 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
                 if( xTimeToWake < xNextTaskUnblockTime )
                 {
                     xNextTaskUnblockTime = xTimeToWake;
+                    if(xNextTaskUnblockTime > 0x08000000)
+                    {
+                        xNextTaskUnblockTime = xTimeToWake;
+                    }
                 }
                 else
                 {
@@ -5395,6 +5399,11 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
             if( xTimeToWake < xNextTaskUnblockTime )
             {
                 xNextTaskUnblockTime = xTimeToWake;
+                
+                if(xNextTaskUnblockTime > 0x08000000)
+                {
+                    xNextTaskUnblockTime = xTimeToWake;
+                }
             }
             else
             {

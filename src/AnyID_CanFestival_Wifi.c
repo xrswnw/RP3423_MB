@@ -95,6 +95,7 @@ void  Wifi_NetInit(void *p)
                             if(g_sWifiOpRegs.mode == WIFI_OP_MODE_IDLE)
                             {
                                 vTaskDelay(wifiLinkOpTime);                         //每十秒重试一次
+                                Wifi_Init(WIFI_BAUDRARE);
                                 Wifi_Connect(&g_sWifiOpRegs, (WIFI_REGS *)p);
                             }
                             else
@@ -124,7 +125,7 @@ void  Wifi_NetInit(void *p)
                             {
                                 g_sWifiOpRegs.mode = WIFI_OP_MODE_DTU;
                                 g_sWifiOpRegs.state = WIFI_OP_STATE_IDEL;
-                                
+                                g_nWifiStatus = WIFI_STATUS_SOCEKT_CONNET_OK;
                                 vTaskSuspend(NULL);                                 //初始化完成，暂停此任务
                             }
                         }
@@ -180,7 +181,7 @@ BOOL Wifi_RcvQueue(QueueHandle_t queue)
         }
         else if(g_sWifiOpRegs.dtuState == WIFI_DTU_STAT_CONWIFI)
         {//sokect断开，灯光指示即可，等待重连
-            g_nWifiStatus = WIFI_STATUS_SOCEKT_CONNET_FAIL;
+            g_nWifiStatus = WIFI_STATUS_LISITING_SOCKET; 
         }
         else if(g_sWifiOpRegs.dtuState == WIFI_DTU_STAT_DIS ||              //未测试
                 g_sWifiOpRegs.dtuState == WIFI_ERR_OTHER)
@@ -319,6 +320,7 @@ void Wifi_Tranceive(WIFI_OPREGS *pOpRegs, u32 tick)
         case WIFI_CMD_AT_SKT_LISTEN:
             sprintf(g_aWifiTmpBuf, "%s", "AT+SOCKET?");
             Wifi_WriteAtCmd(g_aWifiTmpBuf);
+            g_nWifiStatus = WIFI_STATUS_LISITING_SOCKET; 
 			break;
 		default:
 			break;

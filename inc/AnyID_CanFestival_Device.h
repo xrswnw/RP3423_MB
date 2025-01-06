@@ -14,7 +14,16 @@
 #include "AnyID_CanFestival_Uart.h"
 #include "AnyID_CanFestival_Flash.h"
 
-extern u32 g_nDeviceState;
+extern u32 g_nDeviceStatus;
+
+
+#define DEVICE_STATUS_LED_SYS_RUN                0x00000001
+
+#define DEVICE_STATUS_PERIPH_WIFI_LINK_OK       0x08000000
+#define DEVICE_STATUS_PERIPH_SOKECT_LINK_OK     0x10000000
+#define DEVICE_STATUS_PERIPH_INFRA2_LOSS        0x20000000
+#define DEVICE_STATUS_PERIPH_INFRA1_LOSS        0x40000000
+#define DEVICE_STATUS_PERIPH_RF_LOSS            0x80000000
 
 
 #define DEVICE_VERSION_SIZE 			50
@@ -196,7 +205,7 @@ extern DEVICE_PARAMS g_sDeviceParams;
 #define DEVICE_COM_CMD_OUTPUT_CTR           0x32
 
 #define DEVICE_COM_CMD_RF_AMAR_INFO         0x40
-
+#define DEVICE_COM_CMD_RF_GAT_AMAR_DATA     0x41
 //
 #define DEVICE_CAN_RSP_LEN                  0x02
 
@@ -279,15 +288,7 @@ typedef struct deviceRfInfo{
     char version[DEVICE_VERSION_SIZE];
 }DEVICE_RFINFO;
 
-
-
-#define DEVICE_SUB_RFINFO_LEN               (8 + 16)
-
-typedef struct flashRecord
-{
-    u8 data[DEVICE_SUB_RFINFO_LEN + 20];
-    u32 crc;
-}FLASH_RECORD;
+#define DEVICE_SUB_RFINFO_LEN               (FLASH_RECORD_UID_LEN + FLASH_RECORD_DATE_LEN)
 
 typedef struct deviceInfo{
     u8 addr;
@@ -315,18 +316,21 @@ typedef struct deviceSubInfo{
 }DEVICE_SUBINFO;
 //
 
-#define DEVICE_RF_OP_STATE_IDLE                 0x00
-#define DEVICE_RF_OP_STATE_START_OP             0x01
-#define DEVICE_RF_OP_STATE_OPEN_ANT_AND_OP      0x02
-#define DEVICE_RF_OP_STATE_GET_AMAR_DATA        0x04
-#define DEVICE_RF_OP_STATE_WAIT                 0x08
-#define DEVICE_RF_OP_STATE_ANT_OP_OK            0x10
-#define DEVICE_RF_OP_STATE_ANT_OP_FAIL          0x20
-#define DEVICE_RF_OP_STATE_CHANGE_ANT           0x40
-#define DEVICE_RF_OP_STATE_SLEEP                0x80
+#define DEVICE_RF_OP_STATE_IDLE                 0x0000
+#define DEVICE_RF_OP_STATE_START_OP             0x0001
+#define DEVICE_RF_OP_STATE_OPEN_ANT_AND_OP      0x0002
+#define DEVICE_RF_OP_STATE_GET_AMAR_DATA        0x0004
+#define DEVICE_RF_OP_STATE_WAIT                 0x0008
+#define DEVICE_RF_OP_STATE_ANT_OP_OK            0x0010
+#define DEVICE_RF_OP_STATE_ANT_OP_FAIL          0x0020
+#define DEVICE_RF_OP_STATE_CHANGE_ANT           0x0040
+#define DEVICE_RF_OP_STATE_SLEEP                0x0080
+#define DEVICE_RF_OP_STATE_WAIT_AMAR_DATA       0x0100
+#define DEVICE_RF_OP_STATE_RCV_OK_AMAR_DATA     0x0200
+#define DEVICE_RF_OP_STATE_COM_ERR              0x0400
 
 typedef struct rfOp{
-    u8 state;
+    u16 state;
     u8 index;
     u8 antNum;
     u8 antIndex;
@@ -337,11 +341,13 @@ typedef struct rfOp{
     u8 mxAddr[DEVICE_SUBDEVICE_MX_MAX_NUM];
     
     u8 antPort;
+    u8 opNum;
+    u8 opIndex;
     u8 amar;
     u8 amarValue;
     u8 opAddr;
     u8 opLen;
-    u8 data[DEVICE_SUB_RFINFO_LEN];
+    u8 data[DEVICE_SUB_RFINFO_LEN + 6];
     u32 opTime;
 }RF_OP;
 
@@ -395,4 +401,6 @@ void Device_UartRxDispatch(void *p);
 void Device_UartTxDispatch(void *p);
 
 void Device_HLDispatch(void *p);
+
+void Device_LedDispatch();
 #endif

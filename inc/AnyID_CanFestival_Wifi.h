@@ -16,10 +16,11 @@ extern u32 g_nWifiStatus;
 #define WIFI_STATUS_AT_ERR_OR_NOSUPP        1
 #define WIFI_STATUS_WIFI_CONNET_OK          2
 #define WIFI_STATUS_WIFI_CONNET_FAIL        3
+
 #define WIFI_STATUS_SOCEKT_CONNET_OK        4
 #define WIFI_STATUS_SOCEKT_CONNET_FAIL      5
 #define WIFI_STATUS_OTHER_ERR               6
-
+#define WIFI_STATUS_LISITING_SOCKET         7
 
 //----------------------
 #define WIFI_CMD_AT_AT                          0               //AT≤‚ ‘                 
@@ -148,9 +149,9 @@ typedef struct bw16OpTcpClientReg{
 #define WIFI_OP_STATE_S                 0x80
 
 #define WIFI_OP_DELAY_TIME              3
-#define WIFI_TO_AT_MIN                  20
-#define WIFI_TO_AT_NORMAL               200
-#define WIFI_TO_AT_LINK                 2000                    
+#define WIFI_TO_AT_MIN                  20 * 5
+#define WIFI_TO_AT_NORMAL               200 * 5
+#define WIFI_TO_AT_LINK                 2000 * 5                 
 #define WIFI_OP_REPAT_TICK              3
 
 #define WIFI_OP_ERR_GET_GMR             0x00000001
