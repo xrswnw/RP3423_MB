@@ -12,8 +12,10 @@ void Tim_InitInterface()
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
 	TIM_TimeBaseInit(TIM_PORT, &TIM_TimeBaseStructure);
+    
 	TIM_Cmd(TIM_PORT, ENABLE);
-	TIM_ITConfig(TIM_PORT,TIM_IT_Update,ENABLE);
+    
+	TIM_ITConfig(TIM_PORT,TIM_IT_Update, ENABLE);
 	TIM_ClearITPendingBit(TIM_PORT, TIM_IT_Update);
 	
 	NVIC_InitStructure.NVIC_IRQChannel = TIM1_UP_IRQn;
@@ -21,6 +23,4 @@ void Tim_InitInterface()
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
-	
-
 }

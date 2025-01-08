@@ -26,8 +26,8 @@ extern u32 g_nDeviceStatus;
 #define DEVICE_STATUS_PERIPH_RF_LOSS            0x80000000
 
 
-#define DEVICE_VERSION_SIZE 			50
-#define DEVICE_VERSION_STEP_LEN         5
+#define DEVICE_VERSION_SIZE                     50
+#define DEVICE_VERSION_STEP_LEN                 5
 #define DEVICE_FRAME_BROADCAST_ADDR             0xFFFF
 //canopenœ‡πÿ--------------------------------------------------------------
 
@@ -340,7 +340,8 @@ typedef struct rfOp{
     u8 mxIndex;
     u8 mxAddr[DEVICE_SUBDEVICE_MX_MAX_NUM];
     
-    u8 antPort;
+    u8 rfPort;
+    u8 mxPort;
     u8 opNum;
     u8 opIndex;
     u8 amar;

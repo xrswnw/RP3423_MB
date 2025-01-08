@@ -246,6 +246,13 @@ u16 Reader_ProcessUartFrame(u8 *pFrame, UART_TXFRAME *txFrame)
     
     switch(cmd)
     {
+        case UART_COM_CMD_SOFT_RESET:
+            if(paramsLen == 0)
+            {
+                txFrame->result = UART_COM_RESULT_NEED_RSP;
+                txFrame->len = Device_ResponseFrame(NULL, 0, txFrame);
+            }
+        break;
         case UART_COM_CMD_GET_VERSION:
           if(paramsLen == 0)
           {
@@ -423,7 +430,7 @@ u8 Device_ProcessCobMRSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams, CAN_FRAME
     switch(cmd)
     {
         case DEVICE_COM_CMD_HEART:
-            if(paramsLen == DEVICE_CAN_FRAME_BOOT_UP_LEN)
+            if(paramsLen == DEVICE_CAN_FRAME_NOPARAMS_LEN + 1)
             {   
                 DEVICE_INFO *pSubInfo = NULL;
             
@@ -432,7 +439,7 @@ u8 Device_ProcessCobMRSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams, CAN_FRAME
                     pSubInfo = Device_SubDeviceGet(addr);
                     if(pSubInfo)
                     {
-                        pSubInfo->status = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + 1);
+                        pSubInfo->status = DEVICE_SUBDEVICE_STATUS_HEART_LOADING;//*(pParams + DEVICE_CAN_RSP_POS_PARAMS + 1);
                         pSubInfo->heartTime = g_nSysTick;
                     }
                     else
@@ -455,19 +462,26 @@ u8 Device_ProcessCobMRSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams, CAN_FRAME
                 u8 step = 0;
                 DEVICE_INFO *pSunInfo = NULL;
                 
-                step = *(pParams + DEVICE_CAN_RSP_POS_PARAMS);
-                if(addr == (txFrame->coBid & DEVICE_COB_ID_MASK_ADDR) && (step == txFrame->buffer[DEVICE_CAN_RSP_POS_PARAMS]))
+                //RF_OP *pOpInfo = NULL;
+
+                //pOpInfo = &g_sDeviceOp.rfInfo;
+                    
+                //if(pOpInfo->opIndex == *(pParams + DEVICE_CAN_RSP_POS_PARAMS))                //上电可能导致数据交互大，若数据错乱可增加op索引解析，原则以寻找地址索引应无误
                 {
-                    pSunInfo = Device_SubDeviceGet(addr);
-                    if(pSunInfo)
+                    step = *(pParams + DEVICE_CAN_RSP_POS_PARAMS);
+                    if(addr == (txFrame->coBid & DEVICE_COB_ID_MASK_ADDR) && (step == txFrame->buffer[DEVICE_CAN_RSP_POS_PARAMS]))
                     {
-                        memcpy(pSunInfo->version + step * DEVICE_VERSION_STEP_LEN, pParams + 3, DEVICE_VERSION_STEP_LEN);
+                        pSunInfo = Device_SubDeviceGet(addr);
+                        if(pSunInfo)
+                        {
+                            memcpy(pSunInfo->version + step * DEVICE_VERSION_STEP_LEN, pParams + 3, DEVICE_VERSION_STEP_LEN);
+                        }
+                        else
+                        {
+                            step = NULL;
+                        }
+                        result = DEVICE_CAN_FRAME_RESULT_CHKOK;
                     }
-                    else
-                    {
-                        step = NULL;
-                    }
-                    result = DEVICE_CAN_FRAME_RESULT_CHKOK;
                 }
             }
         break;
@@ -572,30 +586,38 @@ u8 Device_ProcessCobSTSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams)
             }
             break;
 			case DEVICE_COM_CMD_RF_AMAR_INFO:
-            if(paramsLen == 6)
+            if(paramsLen == DEVICE_CAN_FRAME_LIMITDATA_LEN)
             {   
             	u8 result = 0, ant = 0, pos = 0;
 
 				ant = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + pos++);
 				result = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + pos++);
-				if(ant == g_sDeviceOp.rfInfo.antPort)
+				if(ant == g_sDeviceOp.rfInfo.rfPort)                                                    //校验端口
 				{
                 	Device_RspFormatCanFrame(DEVICE_COB_ID_SR_SDO + addr, cmd, DEVICE_CAN_FRAME_RSP_OK, NULL, NULL);
                 	result = DEVICE_CAN_FRAME_RESULT_RSP;
 
                     if(g_sDeviceOp.rfInfo.state == DEVICE_RF_OP_STATE_WAIT || g_sDeviceOp.rfInfo.state == DEVICE_RF_OP_STATE_OPEN_ANT_AND_OP)
                     {
-                        if(result)
+                        //if(result)
                         {//报警，拉取数据
-                            g_sDeviceOp.rfInfo.state = DEVICE_RF_OP_STATE_GET_AMAR_DATA;    
                             g_sDeviceOp.rfInfo.amar = result;
                             g_sDeviceOp.rfInfo.amarValue = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + pos++); 
                             g_sDeviceOp.rfInfo.opAddr = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + pos++);
                             g_sDeviceOp.rfInfo.opLen = *(pParams + DEVICE_CAN_RSP_POS_PARAMS + pos++);
+                            
+                            if(g_sDeviceOp.rfInfo.amar ^ 0x80)
+                            {
+                                g_sDeviceOp.rfInfo.state = DEVICE_RF_OP_STATE_GET_AMAR_DATA;  
+                            }
+                            else
+                            {
+                                g_sDeviceOp.rfInfo.state = DEVICE_RF_OP_STATE_ANT_OP_OK;
+                            }
                         }
-                        else
+                       // else
                         {
-                            g_sDeviceOp.rfInfo.state = DEVICE_RF_OP_STATE_ANT_OP_OK;
+                        //    g_sDeviceOp.rfInfo.state = DEVICE_RF_OP_STATE_ANT_OP_OK;
                         }
                     }
 				}
@@ -603,7 +625,7 @@ u8 Device_ProcessCobSTSdo(u32 addr, u8 cmd, u8 paramsLen, u8 *pParams)
             break;
         #else
             __NOP();
-        #endif
+        #endif 
         default:
         break;
     }
@@ -741,14 +763,7 @@ void Device_GetAmerInfo(u8 addr, CAN_FRAME *pTxFrame)
     pTxFrame->coBid = DEVICE_COB_ID_MT_SDO + addr;
     pTxFrame->flag = CAN_FRAME_FLAG_NEED_RSP;
     pTxFrame->len += 3;
-/*
-    pTxFrame->buffer[0] = DEVICE_COM_CMD_RF_GAT_AMAR_DATA;
-    pTxFrame->buffer[1] = DEVICE_CAN_FRAME_RFU;
-    pTxFrame->buffer[2] = 0x00;                     //uid区域
-    
-    xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);
-    pOpInfo->opNum ++;
-    */
+
     for(i = 0; i <= (DEVICE_SUB_RFINFO_LEN / DEVICE_VERSION_STEP_LEN); i ++)
     {
         pTxFrame->buffer[0] = DEVICE_COM_CMD_RF_GAT_AMAR_DATA;
@@ -773,7 +788,7 @@ void Device_OpTask()
         u8 rfDeviceNum = 0, mxDeviceNum = 0, mbDeviceNum = 0;
         u8 index = 0;
         for(index = 0; index < g_sDeviceSubInfo.num; index++)
-        {
+        {//DEVICE_SUBDEVICE_STATUS_HEART_LOADING
             if(g_sDeviceSubInfo.subInfo[index].status == DEVICE_SUBDEVICE_STATUS_STD_ONLINE)
             {
                 if(g_sDeviceSubInfo.subInfo[index].type == DEVICE_SUBDEVICE_TYPE_MX)
@@ -819,36 +834,43 @@ void Device_OpTask()
         switch(pROp->antIndex)
         {
             case DEVICE_SUBDEVICE_ANT_0:
-				pROp->antPort = DEVICE_SUBDEVICE_ANT_0;
+				pROp->rfPort = DEVICE_SUBDEVICE_ANT_0;
+                pROp->mxPort = NULL;
 				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0), &txFrame);
             break;
             case DEVICE_SUBDEVICE_ANT_1:
-				pROp->antPort = DEVICE_SUBDEVICE_ANT_1;
+				pROp->rfPort = DEVICE_SUBDEVICE_ANT_1;
+                pROp->mxPort = NULL;
 				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1), &txFrame);
             break;
             case DEVICE_SUBDEVICE_ANT_2:
                 pROp->state = DEVICE_RF_OP_STATE_CHANGE_ANT;           //暂不支持多端口同时开启
-				//pROp->antPort = DEVICE_SUBDEVICE_ANT_0 | DEVICE_SUBDEVICE_ANT_1;
+                pROp->mxPort = NULL;
+				//pROp->rfPort = DEVICE_SUBDEVICE_ANT_0 | DEVICE_SUBDEVICE_ANT_1;
 				//Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0) | Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1), &txFrame);
             break;
             case DEVICE_SUBDEVICE_ANT_3:
-				pROp->antPort = DEVICE_SUBDEVICE_ANT_2;
+				pROp->rfPort = DEVICE_SUBDEVICE_ANT_2;
+                pROp->mxPort = DEVICE_SUBDEVICE_ANT_0;
 				Device_CtrAnt(*(pROp->mxAddr + pROp->mxIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0), &txFrame);                     //先开启MX子端口
 				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_2), &txFrame);                     //再开启RF母端口
             break;
             case DEVICE_SUBDEVICE_ANT_4:
-				pROp->antPort = DEVICE_SUBDEVICE_ANT_2;
+				pROp->rfPort = DEVICE_SUBDEVICE_ANT_2;
+                pROp->mxPort = DEVICE_SUBDEVICE_ANT_1;
 				Device_CtrAnt(*(pROp->mxAddr + pROp->mxIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1), &txFrame);
 				Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_2), &txFrame);
             break;
             case DEVICE_SUBDEVICE_ANT_5:
                 pROp->state = DEVICE_RF_OP_STATE_CHANGE_ANT;
-				//pROp->antPort = DEVICE_SUBDEVICE_ANT_2;
+                //pROp->mxPort = DEVICE_SUBDEVICE_ANT_1 | DEVICE_SUBDEVICE_ANT_0;
+				//pROp->rfPort = DEVICE_SUBDEVICE_ANT_2;
 				//Device_CtrAnt(*(pROp->mxAddr + pROp->mxIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_0) | Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_1), &txFrame);
 				//Device_CtrAnt(*(pROp->rfAddr + pROp->rfIndex), Device_SeltctAnt(DEVICE_SUBDEVICE_ANT_2), &txFrame);
             break;
             default:
 				pROp->state = DEVICE_RF_OP_STATE_IDLE;
+                
             break;
         }
     }
@@ -859,7 +881,7 @@ void Device_OpTask()
     }
     else if(pROp->state == DEVICE_RF_OP_STATE_WAIT)
     {
-        if(pROp->opTime + 100 <=  g_nSysTick)
+        if(pROp->opTime + 300 <=  g_nSysTick)
         {
             pROp->state = DEVICE_RF_OP_STATE_ANT_OP_FAIL;
         }
@@ -919,7 +941,7 @@ void Device_OpTask()
             pROp->state = DEVICE_RF_OP_STATE_COM_ERR;
         }
     }
-    else if(pROp->state == DEVICE_RF_OP_STATE_RCV_OK_AMAR_DATA)             //数据拉取完成，在此存入FLASH或者缓冲区
+    else if(pROp->state == DEVICE_RF_OP_STATE_RCV_OK_AMAR_DATA)             //数据拉取完成，在此存入FLASH或者缓冲区，同时可在此处报警指示+-
     {
         portENTER_CRITICAL();    
         //FLASH、EEPROM操作禁止中断打断
@@ -933,6 +955,11 @@ void Device_OpTask()
 
 void Device_GetSubDeviceVersion(u8 addr, CAN_FRAME *pTxFrame)
 {
+    RF_OP *pOpInfo = NULL;
+    
+    pOpInfo = &g_sDeviceOp.rfInfo;
+    pOpInfo->opNum = pOpInfo->opIndex = 0;        
+    
     pTxFrame->coBid = DEVICE_COB_ID_MT_SDO + addr;
     pTxFrame->len = 3;
     pTxFrame->flag = CAN_FRAME_FLAG_NEED_RSP;
@@ -941,21 +968,27 @@ void Device_GetSubDeviceVersion(u8 addr, CAN_FRAME *pTxFrame)
     
     pTxFrame->buffer[2] = 0x00;
     xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);                         //可能毒死？？？
+    pOpInfo->opNum ++;
     
     pTxFrame->buffer[2] = 0x01;
     xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);
+    pOpInfo->opNum ++;
     
     pTxFrame->buffer[2] = 0x02;
     xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);
+    pOpInfo->opNum ++;
     
     pTxFrame->buffer[2] = 0x03;
     xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);
+    pOpInfo->opNum ++;
     
     pTxFrame->buffer[2] = 0x04;
     xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);
+    pOpInfo->opNum ++;
     
     pTxFrame->buffer[2] = 0x05;
     xQueueSend(g_hCanTxQueue, pTxFrame, portMAX_DELAY);
+    pOpInfo->opNum ++;
 }
 
 //-----------------------------------------------------
@@ -1151,7 +1184,7 @@ void Device_MainDispatch(void *p)
     while(1)
     {
         //vTaskDelay(2000);
-        Device_CanAutoTask();                   //test
+        //Device_CanAutoTask();                   //test
         Device_OpTask();
     }
 }
@@ -1235,6 +1268,12 @@ void Device_UartTxDispatch(void *p)
             {
                 Wifi_WriteBuffer(uartTxFreme.buffer, uartTxFreme.len);
             }
+            
+            if(uartTxFreme.cmd == UART_COM_CMD_SOFT_RESET)
+            {
+                vTaskDelay(10);
+                Sys_SoftReset();
+            }
         }
         else
         {
@@ -1243,7 +1282,7 @@ void Device_UartTxDispatch(void *p)
     }
 }
 //00100101
-
+    //static u8 canTxErr = 0, canRxErr = 0, canLec = 0, canErr = 0;
 #define Device_CanEsrRegUp(can) do{\
                                     canRxErr = (can->ESR & 0xFF000000) >> 24;\
                                     canTxErr = (can->ESR & 0x00FF0000) >> 16;\
@@ -1253,7 +1292,7 @@ void Device_UartTxDispatch(void *p)
 void Device_HLDispatch(void *p)
 {
     const u32 hlChkTime = pdMS_TO_TICKS(500);
-    //static u8 canTxErr = 0, canRxErr = 0, canLec = 0, canErr = 0;
+
     while(1)
     {
         if(USART_GetFlagStatus(UART_PORT, USART_FLAG_NE | USART_FLAG_FE | USART_FLAG_PE))
@@ -1400,6 +1439,10 @@ void Device_LedDispatch()
                     sprintf(rtcTestInfo, "%d年%d月%d日%d时%d分%d秒", g_nRtcRealTime.year, g_nRtcRealTime.month, g_nRtcRealTime.day,g_nRtcRealTime.hour, g_nRtcRealTime.minute, g_nRtcRealTime.second);
                     Wifi_WriteBuffer((u8 *)rtcTestInfo, strlen(rtcTestInfo));
                 }
+            }
+            else if(g_nWifiStatus == WIFI_STATUS_OTHER_ERR)
+            {
+                Periph_Ledoff(PERIPH_LED_WIFI_STATUS);               //连接成功
             }
         }
         else

@@ -134,16 +134,16 @@ void Sys_Init(void)
     
     Sys_CtrlIOInit();
 	RCC_ClocksTypeDef g_sSysclockFrep; RCC_GetClocksFreq(&g_sSysclockFrep);    //查看时钟频率
-    
-    //RTC_Init();
+
+    RTC_Check();
 	FRam_InitInterface();
 	Device_ReadDeviceParamenter();
     Periph_InitInterface();
     while(Can_InitInterface(CAN_PSC_BUD_500K))
 	{			
-        Periph_Ledon(1);
+        Periph_Ledon(PERIPH_LED_SYS_RUN);
 		Sys_Delayms(10);
-        Periph_Ledoff(1);
+        Periph_Ledoff(PERIPH_LED_SYS_RUN);
 		Sys_Delayms(10);
 		#if SYS_ENABLE_WDT
     	WDG_FeedIWDog();
@@ -153,21 +153,16 @@ void Sys_Init(void)
     Wifi_Init(WIFI_BAUDRARE);
     Wifi_Connect(&g_sWifiOpRegs, &g_sDeviceParams.wifiParams);
     Uart_Init(UART_BAUDRARE);
-    
+
     Lan_Init(UART_BAUDRARE);
-    
+
     Flash_InitInterface();
-    if(Flash_ChkErr() == FALSE)
-    {   //FLASH问题，报警指示
-    
-    
-    }
 	Device_Init();
-    
+
 	#if SYS_ENABLE_WDT
 	WDG_FeedIWDog();
 	#endif
-			
+
     Sys_EnableInt();
 }
 

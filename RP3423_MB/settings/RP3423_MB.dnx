@@ -54,7 +54,7 @@
         <ITMlogFile>$PROJ_DIR$\ITM.log</ITMlogFile>
     </SWOTraceHWSettings>
     <DebugChecksum>
-        <Checksum>151989117</Checksum>
+        <Checksum>800309266</Checksum>
     </DebugChecksum>
     <struct_types>
         <Fmt0>CAN_TypeDef-BTR	4	0</Fmt0>
@@ -62,9 +62,7 @@
         <Fmt2>CAN_TypeDef-IER	4	0</Fmt2>
         <Fmt3>DEVICE_INFO-heartTime	3	0</Fmt3>
         <Fmt4>MiniListItem_t-xItemValue	4	0</Fmt4>
-        <Fmt5>_xtime-day	3	0</Fmt5>
-        <Fmt6>_xtime-month	3	0</Fmt6>
-        <Fmt7>struct xLIST_ITEM-xItemValue	4	0</Fmt7>
+        <Fmt5>struct xLIST_ITEM-xItemValue	4	0</Fmt5>
     </struct_types>
     <array_types>
         <Fmt0>u8[4]	3	0</Fmt0>
@@ -135,22 +133,39 @@
     <Breakpoints2>
         <Bp0>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.0.1" 0 0 1 "" 0 "" 0</Bp0>
         <Bp1>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.0.1" 0 0 1 "" 0 "" 0</Bp1>
-        <Bp2>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_SysCfg.c}.290.9" 0 0 1 "" 0 "" 0</Bp2>
-        <Bp3>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.779.17" 0 0 1 "" 0 "" 0</Bp3>
-        <Bp4>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.758.9" 0 0 1 "" 0 "" 0</Bp4>
-        <Bp5>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.754.9" 0 0 1 "" 0 "" 0</Bp5>
-        <Bp6>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_RTC.c}.0.1" 0 0 1 "" 0 "" 0</Bp6>
-        <Bp7>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.0.1" 0 0 1 "" 0 "" 0</Bp7>
-        <Bp8>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.0.1" 0 0 1 "" 0 "" 0</Bp8>
-        <Bp9>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.461.9" 0 0 1 "" 0 "" 0</Bp9>
-        <Bp10>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.479.9" 0 0 1 "" 0 "" 0</Bp10>
-        <Bp11>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1208.17" 0 0 1 "" 0 "" 0</Bp11>
-        <Bp12>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\main.c}.14.5" 0 0 1 "" 0 "" 0</Bp12>
-        <Bp13>_ 0 "EMUL_CODE" "0x080024CC" 0 0 1 "" 0 "" 0</Bp13>
-        <Bp14>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\kernel\src\tasks.c}.2765.21" 0 0 1 "" 0 "" 0</Bp14>
-        <Bp15>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\kernel\src\tasks.c}.4007.9" 0 0 1 "" 0 "" 0</Bp15>
-        <Bp16>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\kernel\src\tasks.c}.5366.25" 0 0 1 "" 0 "" 0</Bp16>
-        <Count>17</Count>
+        <Bp2>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_SysCfg.c}.285.9" 0 0 1 "" 0 "" 0</Bp2>
+        <Bp3>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_RTC.c}.0.1" 0 0 1 "" 0 "" 0</Bp3>
+        <Bp4>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.0.1" 0 0 1 "" 0 "" 0</Bp4>
+        <Bp5>_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\stm32f10x_it.c}.0.1" 0 0 1 "" 0 "" 0</Bp5>
+        <Bp6>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.480.9" 0 0 1 "" 0 "" 0</Bp6>
+        <Bp7>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1222.17" 0 0 1 "" 0 "" 0</Bp7>
+        <Bp8>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\main.c}.14.5" 0 0 1 "" 0 "" 0</Bp8>
+        <Bp9>_ 0 "EMUL_CODE" "0x080024CC" 0 0 1 "" 0 "" 0</Bp9>
+        <Bp10>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\kernel\src\tasks.c}.2765.21" 0 0 1 "" 0 "" 0</Bp10>
+        <Bp11>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\kernel\src\tasks.c}.4007.9" 0 0 1 "" 0 "" 0</Bp11>
+        <Bp12>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\kernel\src\tasks.c}.5366.25" 0 0 1 "" 0 "" 0</Bp12>
+        <Bp13>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.190.13" 0 0 1 "" 0 "" 0</Bp13>
+        <Bp14>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1297.17" 0 0 1 "" 0 "" 0</Bp14>
+        <Bp15>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1318.13" 0 0 1 "" 0 "" 0</Bp15>
+        <Bp16>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_RTC.c}.62.9" 0 0 1 "" 0 "" 0</Bp16>
+        <Bp17>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.172.9" 0 0 1 "" 0 "" 0</Bp17>
+        <Bp18>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.97.33" 0 0 1 "" 0 "" 0</Bp18>
+        <Bp19>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.103.33" 0 0 1 "" 0 "" 0</Bp19>
+        <Bp20>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.425.21" 0 0 1 "" 0 "" 0</Bp20>
+        <Bp21>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Wifi.c}.163.9" 0 0 1 "" 0 "" 0</Bp21>
+        <Bp22>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1149.21" 0 0 1 "" 0 "" 0</Bp22>
+        <Bp23>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1144.25" 0 0 1 "" 0 "" 0</Bp23>
+        <Bp24>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.788.21" 0 0 1 "" 0 "" 0</Bp24>
+        <Bp25>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.792.21" 0 0 1 "" 0 "" 0</Bp25>
+        <Bp26>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.796.21" 0 0 1 "" 0 "" 0</Bp26>
+        <Bp27>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.878.13" 0 0 1 "" 0 "" 0</Bp27>
+        <Bp28>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1021.19" 0 0 1 "" 0 "" 0</Bp28>
+        <Bp29>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.1024.19" 0 0 1 "" 0 "" 0</Bp29>
+        <Bp30>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.599.29" 0 0 1 "" 0 "" 0</Bp30>
+        <Bp31>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.605.29" 0 0 1 "" 0 "" 0</Bp31>
+        <Bp32>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.938.9" 0 0 1 "" 0 "" 0</Bp32>
+        <Bp33>_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\src\AnyID_CanFestival_Device.c}.442.25" 0 0 1 "" 0 "" 0</Bp33>
+        <Count>34</Count>
     </Breakpoints2>
     <TermIOLog>
         <LoggingEnabled>_ 0</LoggingEnabled>

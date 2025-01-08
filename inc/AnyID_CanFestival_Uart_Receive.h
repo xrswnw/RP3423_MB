@@ -94,7 +94,9 @@ extern UART_TXFRAME g_sUartTxFrame;
                                               
                                               
 #define UART_COM_RESULT_OP_SUBDEVICE                        0x01                                             
-                                              
+    
+
+#define UART_COM_CMD_SOFT_RESET                             0x04
                                               
 #define UART_COM_CMD_GET_RF_PEMACE_PARAMS                   0x20
 #define UART_COM_CMD_GET_RF_AMAR_PARAMS                     0x21

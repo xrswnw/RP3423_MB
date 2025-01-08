@@ -188,6 +188,7 @@ BOOL Wifi_RcvQueue(QueueHandle_t queue)
         {//wifi断开或者其它错误，重新初始化
             g_sWifiOpRegs.mode = WIFI_OP_MODE_ERR;
             xTaskResumeFromISR(g_hWifi_NetInit);
+            g_nWifiStatus = WIFI_STATUS_OTHER_ERR;
         }
     }
     

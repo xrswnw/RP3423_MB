@@ -25,12 +25,7 @@ typedef struct flashRecord{
     u8 rfu;
     u8 uid[FLASH_RECORD_UID_LEN];
     u8 data[FLASH_RECORD_DATE_LEN];
-    u8 year;
-    u8 month;
-    u8 day;
-    u8 hour;
-    u8 minute;
-    u8 second;
+    u32 unixStamp;
 }FLASH_RECORD;
 
 

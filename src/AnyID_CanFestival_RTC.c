@@ -311,7 +311,7 @@ void Rtc_UnixStampToRealTime(u32 stamp, RTC_REALTIME *realTime)
     } 
     
     days -= leapYearCount; 
-    realTime->year = 1970 + (days / RTC_REAL_TIME_YEAR_HAVE_DAY);                   //获得年 
+    realTime->year = RTC_REAL_TIME_UNIX_BASE_YEAR + (days / RTC_REAL_TIME_YEAR_HAVE_DAY);                   //获得年 
     days %= RTC_REAL_TIME_YEAR_HAVE_DAY;                                            //今年的第几天 
     days = 01 + days;                                                               //1日开始 
     
